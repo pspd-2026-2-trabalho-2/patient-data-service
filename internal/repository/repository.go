@@ -260,6 +260,16 @@ func (r *Repository) CohortMedicationFrequency(ctx context.Context, conditionCod
 		GROUP BY e.code ORDER BY COUNT(*) DESC, e.code`, conditionCode)
 }
 
+// CohortByDepartment conta pacientes distintos por departamento de atendimento.
+func (r *Repository) CohortByDepartment(ctx context.Context, conditionCode string) ([]domain.Count, error) {
+	return r.queryCounts(ctx, "CohortByDepartment",
+		cohortCTE+`
+		SELECT e.department, COUNT(DISTINCT e.patient_id) FROM encounters e
+		JOIN cohort c ON c.patient_id = e.patient_id
+		WHERE e.department IS NOT NULL AND e.department <> ''
+		GROUP BY e.department ORDER BY COUNT(DISTINCT e.patient_id) DESC, e.department`, conditionCode)
+}
+
 // CohortHbA1c retorna média e mediana (0 se não houver exames).
 func (r *Repository) CohortHbA1c(ctx context.Context, conditionCode string) (mean, median float64, err error) {
 	start := time.Now()

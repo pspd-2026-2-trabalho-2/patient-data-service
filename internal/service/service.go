@@ -111,6 +111,10 @@ func (s *Service) GetCohortStatistics(ctx context.Context, conditionCode string)
 	if err != nil {
 		return nil, err
 	}
+	byDept, err := s.repo.CohortByDepartment(ctx, conditionCode)
+	if err != nil {
+		return nil, err
+	}
 
 	return &domain.CohortStatistics{
 		ConditionCode:       conditionCode,
@@ -120,6 +124,7 @@ func (s *Service) GetCohortStatistics(ctx context.Context, conditionCode string)
 		MeanHbA1c:           mean,
 		MedianHbA1c:         median,
 		MedicationFrequency: meds,
+		ByDepartment:        byDept,
 	}, nil
 }
 

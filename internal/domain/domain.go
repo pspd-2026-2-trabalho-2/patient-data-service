@@ -79,4 +79,5 @@ type CohortStatistics struct {
 	MeanHbA1c           float64
 	MedianHbA1c         float64
 	MedicationFrequency []Count
+	ByDepartment        []Count
 }

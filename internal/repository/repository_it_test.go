@@ -123,6 +123,24 @@ func TestMedicationFrequency(t *testing.T) {
 	}
 }
 
+func TestCohortByDepartment(t *testing.T) {
+	r := newRepo(t)
+	counts, err := r.CohortByDepartment(context.Background(), "Diabetes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]int64{}
+	for _, c := range counts {
+		got[c.Key] = c.Count
+	}
+	if got["Endocrinologia"] != 13 {
+		t.Errorf("Endocrinologia = %d, quer 13", got["Endocrinologia"])
+	}
+	if got["Cardiologia"] != 2 {
+		t.Errorf("Cardiologia = %d, quer 2 (P000001 e P000007)", got["Cardiologia"])
+	}
+}
+
 func TestCheckAssignment(t *testing.T) {
 	r := newRepo(t)
 	ctx := context.Background()

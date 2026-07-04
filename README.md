@@ -20,8 +20,8 @@ API Gateway ──(gRPC)──▶ patient-data-service ──(SQL)──▶ Post
 - Consultas: pacientes por médico, supervisionados por estagiário, atendimentos,
   eventos clínicos (condições/exames/medicações), resumo e histórico clínico,
   pacientes de uma coorte e projetos de pesquisa.
-- Agregações da coorte: total, distribuição por sexo e faixa etária, média e
-  mediana de HbA1c, frequência de medicamentos.
+- Agregações da coorte: total, distribuição por sexo, faixa etária e departamento,
+  média e mediana de HbA1c, frequência de medicamentos.
 - `CheckAssignment`: verifica o vínculo cuidador↔paciente (usado pelo
   Authorization Service — este serviço é o único dono do banco).
 - Observabilidade: métricas Prometheus (RPC, consultas ao banco, pool, Go/processo).

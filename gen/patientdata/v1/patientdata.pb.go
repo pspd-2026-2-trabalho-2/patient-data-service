@@ -535,6 +535,7 @@ type CohortStatistics struct {
 	MeanHba1C           float64                `protobuf:"fixed64,5,opt,name=mean_hba1c,json=meanHba1c,proto3" json:"mean_hba1c,omitempty"`
 	MedianHba1C         float64                `protobuf:"fixed64,6,opt,name=median_hba1c,json=medianHba1c,proto3" json:"median_hba1c,omitempty"`
 	MedicationFrequency []*Count               `protobuf:"bytes,7,rep,name=medication_frequency,json=medicationFrequency,proto3" json:"medication_frequency,omitempty"` // ex.: Metformina=10, Insulina=4
+	ByDepartment        []*Count               `protobuf:"bytes,8,rep,name=by_department,json=byDepartment,proto3" json:"by_department,omitempty"`                      // ex.: Endocrinologia=13, Cardiologia=2
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -614,6 +615,13 @@ func (x *CohortStatistics) GetMedianHba1C() float64 {
 func (x *CohortStatistics) GetMedicationFrequency() []*Count {
 	if x != nil {
 		return x.MedicationFrequency
+	}
+	return nil
+}
+
+func (x *CohortStatistics) GetByDepartment() []*Count {
+	if x != nil {
+		return x.ByDepartment
 	}
 	return nil
 }
@@ -1414,7 +1422,7 @@ const file_proto_patientdata_v1_patientdata_proto_rawDesc = "" +
 	"\x12active_medications\x18\x05 \x03(\v2\x1d.patientdata.v1.ClinicalEventR\x11activeMedications\"/\n" +
 	"\x05Count\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\x03R\x05count\"\xd3\x02\n" +
+	"\x05count\x18\x02 \x01(\x03R\x05count\"\x8f\x03\n" +
 	"\x10CohortStatistics\x12%\n" +
 	"\x0econdition_code\x18\x01 \x01(\tR\rconditionCode\x12%\n" +
 	"\x0etotal_patients\x18\x02 \x01(\x03R\rtotalPatients\x12,\n" +
@@ -1424,7 +1432,8 @@ const file_proto_patientdata_v1_patientdata_proto_rawDesc = "" +
 	"\n" +
 	"mean_hba1c\x18\x05 \x01(\x01R\tmeanHba1c\x12!\n" +
 	"\fmedian_hba1c\x18\x06 \x01(\x01R\vmedianHba1c\x12H\n" +
-	"\x14medication_frequency\x18\a \x03(\v2\x15.patientdata.v1.CountR\x13medicationFrequency\"B\n" +
+	"\x14medication_frequency\x18\a \x03(\v2\x15.patientdata.v1.CountR\x13medicationFrequency\x12:\n" +
+	"\rby_department\x18\b \x03(\v2\x15.patientdata.v1.CountR\fbyDepartment\"B\n" +
 	"\vPatientList\x123\n" +
 	"\bpatients\x18\x01 \x03(\v2\x17.patientdata.v1.PatientR\bpatients\"J\n" +
 	"\rEncounterList\x129\n" +
@@ -1531,37 +1540,38 @@ var file_proto_patientdata_v1_patientdata_proto_depIdxs = []int32{
 	5,  // 5: patientdata.v1.CohortStatistics.by_sex:type_name -> patientdata.v1.Count
 	5,  // 6: patientdata.v1.CohortStatistics.by_age_range:type_name -> patientdata.v1.Count
 	5,  // 7: patientdata.v1.CohortStatistics.medication_frequency:type_name -> patientdata.v1.Count
-	0,  // 8: patientdata.v1.PatientList.patients:type_name -> patientdata.v1.Patient
-	1,  // 9: patientdata.v1.EncounterList.encounters:type_name -> patientdata.v1.Encounter
-	2,  // 10: patientdata.v1.ClinicalEventList.events:type_name -> patientdata.v1.ClinicalEvent
-	3,  // 11: patientdata.v1.ProjectList.projects:type_name -> patientdata.v1.Project
-	11, // 12: patientdata.v1.PatientDataService.ListPatientsByDoctor:input_type -> patientdata.v1.ListPatientsByDoctorRequest
-	12, // 13: patientdata.v1.PatientDataService.ListSupervisedPatients:input_type -> patientdata.v1.ListSupervisedPatientsRequest
-	13, // 14: patientdata.v1.PatientDataService.GetPatient:input_type -> patientdata.v1.GetPatientRequest
-	14, // 15: patientdata.v1.PatientDataService.ListEncounters:input_type -> patientdata.v1.ListEncountersRequest
-	15, // 16: patientdata.v1.PatientDataService.ListClinicalEvents:input_type -> patientdata.v1.ListClinicalEventsRequest
-	16, // 17: patientdata.v1.PatientDataService.GetClinicalSummary:input_type -> patientdata.v1.GetClinicalSummaryRequest
-	17, // 18: patientdata.v1.PatientDataService.GetClinicalHistory:input_type -> patientdata.v1.GetClinicalHistoryRequest
-	18, // 19: patientdata.v1.PatientDataService.ListCohortPatients:input_type -> patientdata.v1.ListCohortPatientsRequest
-	19, // 20: patientdata.v1.PatientDataService.GetCohortStatistics:input_type -> patientdata.v1.GetCohortStatisticsRequest
-	20, // 21: patientdata.v1.PatientDataService.ListProjectsByResearcher:input_type -> patientdata.v1.ListProjectsByResearcherRequest
-	21, // 22: patientdata.v1.PatientDataService.CheckAssignment:input_type -> patientdata.v1.CheckAssignmentRequest
-	7,  // 23: patientdata.v1.PatientDataService.ListPatientsByDoctor:output_type -> patientdata.v1.PatientList
-	7,  // 24: patientdata.v1.PatientDataService.ListSupervisedPatients:output_type -> patientdata.v1.PatientList
-	0,  // 25: patientdata.v1.PatientDataService.GetPatient:output_type -> patientdata.v1.Patient
-	8,  // 26: patientdata.v1.PatientDataService.ListEncounters:output_type -> patientdata.v1.EncounterList
-	9,  // 27: patientdata.v1.PatientDataService.ListClinicalEvents:output_type -> patientdata.v1.ClinicalEventList
-	4,  // 28: patientdata.v1.PatientDataService.GetClinicalSummary:output_type -> patientdata.v1.ClinicalSummary
-	9,  // 29: patientdata.v1.PatientDataService.GetClinicalHistory:output_type -> patientdata.v1.ClinicalEventList
-	7,  // 30: patientdata.v1.PatientDataService.ListCohortPatients:output_type -> patientdata.v1.PatientList
-	6,  // 31: patientdata.v1.PatientDataService.GetCohortStatistics:output_type -> patientdata.v1.CohortStatistics
-	10, // 32: patientdata.v1.PatientDataService.ListProjectsByResearcher:output_type -> patientdata.v1.ProjectList
-	22, // 33: patientdata.v1.PatientDataService.CheckAssignment:output_type -> patientdata.v1.CheckAssignmentResponse
-	23, // [23:34] is the sub-list for method output_type
-	12, // [12:23] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	5,  // 8: patientdata.v1.CohortStatistics.by_department:type_name -> patientdata.v1.Count
+	0,  // 9: patientdata.v1.PatientList.patients:type_name -> patientdata.v1.Patient
+	1,  // 10: patientdata.v1.EncounterList.encounters:type_name -> patientdata.v1.Encounter
+	2,  // 11: patientdata.v1.ClinicalEventList.events:type_name -> patientdata.v1.ClinicalEvent
+	3,  // 12: patientdata.v1.ProjectList.projects:type_name -> patientdata.v1.Project
+	11, // 13: patientdata.v1.PatientDataService.ListPatientsByDoctor:input_type -> patientdata.v1.ListPatientsByDoctorRequest
+	12, // 14: patientdata.v1.PatientDataService.ListSupervisedPatients:input_type -> patientdata.v1.ListSupervisedPatientsRequest
+	13, // 15: patientdata.v1.PatientDataService.GetPatient:input_type -> patientdata.v1.GetPatientRequest
+	14, // 16: patientdata.v1.PatientDataService.ListEncounters:input_type -> patientdata.v1.ListEncountersRequest
+	15, // 17: patientdata.v1.PatientDataService.ListClinicalEvents:input_type -> patientdata.v1.ListClinicalEventsRequest
+	16, // 18: patientdata.v1.PatientDataService.GetClinicalSummary:input_type -> patientdata.v1.GetClinicalSummaryRequest
+	17, // 19: patientdata.v1.PatientDataService.GetClinicalHistory:input_type -> patientdata.v1.GetClinicalHistoryRequest
+	18, // 20: patientdata.v1.PatientDataService.ListCohortPatients:input_type -> patientdata.v1.ListCohortPatientsRequest
+	19, // 21: patientdata.v1.PatientDataService.GetCohortStatistics:input_type -> patientdata.v1.GetCohortStatisticsRequest
+	20, // 22: patientdata.v1.PatientDataService.ListProjectsByResearcher:input_type -> patientdata.v1.ListProjectsByResearcherRequest
+	21, // 23: patientdata.v1.PatientDataService.CheckAssignment:input_type -> patientdata.v1.CheckAssignmentRequest
+	7,  // 24: patientdata.v1.PatientDataService.ListPatientsByDoctor:output_type -> patientdata.v1.PatientList
+	7,  // 25: patientdata.v1.PatientDataService.ListSupervisedPatients:output_type -> patientdata.v1.PatientList
+	0,  // 26: patientdata.v1.PatientDataService.GetPatient:output_type -> patientdata.v1.Patient
+	8,  // 27: patientdata.v1.PatientDataService.ListEncounters:output_type -> patientdata.v1.EncounterList
+	9,  // 28: patientdata.v1.PatientDataService.ListClinicalEvents:output_type -> patientdata.v1.ClinicalEventList
+	4,  // 29: patientdata.v1.PatientDataService.GetClinicalSummary:output_type -> patientdata.v1.ClinicalSummary
+	9,  // 30: patientdata.v1.PatientDataService.GetClinicalHistory:output_type -> patientdata.v1.ClinicalEventList
+	7,  // 31: patientdata.v1.PatientDataService.ListCohortPatients:output_type -> patientdata.v1.PatientList
+	6,  // 32: patientdata.v1.PatientDataService.GetCohortStatistics:output_type -> patientdata.v1.CohortStatistics
+	10, // 33: patientdata.v1.PatientDataService.ListProjectsByResearcher:output_type -> patientdata.v1.ProjectList
+	22, // 34: patientdata.v1.PatientDataService.CheckAssignment:output_type -> patientdata.v1.CheckAssignmentResponse
+	24, // [24:35] is the sub-list for method output_type
+	13, // [13:24] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_proto_patientdata_v1_patientdata_proto_init() }

@@ -3,6 +3,8 @@
 Como subir o serviço e validar todas as consultas e agregações **pelo Postman** (gRPC), com os
 payloads prontos para copiar e colar e os resultados esperados (baseados no `db/seed.sql`).
 
+> No Postman (gRPC) os campos usam os **nomes do `.proto` (snake_case)**, ex.: `patient_id`.
+
 ---
 
 ## 1. Pré-requisitos
@@ -45,85 +47,86 @@ go test -tags=integration ./...  # integração: confere os números do seed aut
 ### CT-01 — GetPatient (dados completos)
 Esperado: João da Silva, com CPF/CNS, nascimento 1970-05-10, Brasilia/DF.
 ```json
-{ "patientId": "P000001" }
+{ "patient_id": "P000001" }
 ```
 
 ### CT-02 — GetPatient (inexistente → erro)
 Esperado: erro `NOT_FOUND`.
 ```json
-{ "patientId": "P999999" }
+{ "patient_id": "P999999" }
 ```
 
 ### CT-03 — ListPatientsByDoctor
 Esperado: **8** pacientes (P000001–P000008).
 ```json
-{ "doctorUsername": "med.cardoso" }
+{ "doctor_username": "med.cardoso" }
 ```
 
 ### CT-04 — ListSupervisedPatients
 Esperado: **3** pacientes (P000001–P000003).
 ```json
-{ "internUsername": "est.souza" }
+{ "intern_username": "est.souza" }
 ```
 
 ### CT-05 — ListEncounters
 Esperado: **2** atendimentos (ENC16 Cardiologia 2024-08-01, ENC01 Endocrinologia 2024-02-10).
 ```json
-{ "patientId": "P000001" }
+{ "patient_id": "P000001" }
 ```
 
 ### CT-06 — ListClinicalEvents (só exames)
 Esperado: HbA1c 8.1 % e Glicemia 182 mg/dL.
 ```json
-{ "patientId": "P000001", "eventType": "Observation" }
+{ "patient_id": "P000001", "event_type": "Observation" }
 ```
 
 ### CT-07 — ListClinicalEvents (todos os eventos)
 Esperado: condições + exames + medicações do paciente.
 ```json
-{ "patientId": "P000001" }
+{ "patient_id": "P000001" }
 ```
 
 ### CT-08 — GetClinicalSummary
 Esperado: paciente + último atendimento + condições + exames + medicações.
 ```json
-{ "patientId": "P000001" }
+{ "patient_id": "P000001" }
 ```
 
 ### CT-09 — GetClinicalHistory
 Esperado: eventos em ordem temporal crescente.
 ```json
-{ "patientId": "P000001" }
+{ "patient_id": "P000001" }
 ```
 
 ### CT-10 — ListCohortPatients
 Esperado: **13** pacientes diabéticos.
 ```json
-{ "conditionCode": "Diabetes" }
+{ "condition_code": "Diabetes" }
 ```
 
 ### CT-11 — GetCohortStatistics
-Esperado: total 13; F7/M6; faixas 3/6/4; HbA1c média 7.76 / mediana 7.6; Metformina 10, Insulina 4, Losartana 2.
+Esperado: total 13; sexo F7/M6; faixas 3/6/4; HbA1c média 7.76 / mediana 7.6;
+medicamentos Metformina 10, Insulina 4, Losartana 2; departamentos Endocrinologia 13, Cardiologia 2.
 ```json
-{ "conditionCode": "Diabetes" }
+{ "condition_code": "Diabetes" }
 ```
 
 ### CT-12 — ListProjectsByResearcher
 Esperado: **2** projetos (PRJ01 Aprovado, PRJ02 Expirado).
 ```json
-{ "researcherUsername": "pesq.lima" }
+{ "researcher_username": "pesq.lima" }
 ```
 
 ### CT-13 — CheckAssignment (vínculo válido)
-Esperado: `allowed: true`, `assignmentType: "medico"`.
+Esperado: `allowed: true`, `assignment_type: "medico"`.
 ```json
-{ "username": "med.cardoso", "patientId": "P000001", "role": "medico" }
+{ "username": "med.cardoso", "patient_id": "P000001", "role": "medico" }
 ```
 
 ### CT-14 — CheckAssignment (sem vínculo)
 Esperado: `allowed: false` (P000015 é do med.almeida).
 ```json
-{ "username": "med.cardoso", "patientId": "P000015", "role": "medico" }
+{ "username": "med.cardoso", "patient_id": "P000015", "role": "medico" }
 ```
 
 ---
@@ -148,11 +151,12 @@ Pare o serviço com `Ctrl+C` e depois `docker compose down -v` (remove o Postgre
 | `pesq.lima` | pesquisador | PRJ01 (Diabetes/Aprovado), PRJ02 (Hipertensao/Expirado) |
 
 **Coorte Diabetes (13):** P000001–P000012 e P000015 · sexo 7F/6M · faixas 18-39=3, 40-59=6, 60+=4 ·
-HbA1c média 7.76 / mediana 7.6 · Metformina 10, Insulina 4, Losartana 2.
+HbA1c média 7.76 / mediana 7.6 · Metformina 10, Insulina 4, Losartana 2 · Endocrinologia 13, Cardiologia 2.
 
 ## Troubleshooting
 | Sintoma | Solução |
 |---|---|
+| `patient_id é obrigatório` (InvalidArgument) | o campo chegou vazio; confira o **nome snake_case** (`patient_id`, não `patientId`) e que o valor está preenchido |
 | Postman não conecta | serviço fora do ar ou porta errada (gRPC é 50051); confira que o TLS está desligado |
 | `ping no banco` falha ao subir | Postgres não pronto; `docker compose up -d db` e aguarde `healthy` |
 | porta 5433 em uso | outro Postgres no host; ajuste a porta no `docker-compose.yml` e no `.env` |

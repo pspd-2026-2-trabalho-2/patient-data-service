@@ -134,5 +134,6 @@ func toPBCohortStatistics(s *domain.CohortStatistics) *pb.CohortStatistics {
 		MeanHba1C:           s.MeanHbA1c,
 		MedianHba1C:         s.MedianHbA1c,
 		MedicationFrequency: toPBCounts(s.MedicationFrequency),
+		ByDepartment:        toPBCounts(s.ByDepartment),
 	}
 }
