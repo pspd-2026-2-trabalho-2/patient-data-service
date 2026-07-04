@@ -1,0 +1,41 @@
+# Ambiente local completo: Postgres (com schema+seed) + patient-data-service.
+# Uso:
+#   docker compose up -d db            # só o banco (para rodar o serviço via `go run`)
+#   docker compose up -d --build       # banco + serviço, tudo em container
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: pspd
+      POSTGRES_PASSWORD: pspd
+      POSTGRES_DB: hospital
+    ports:
+      # Host 5433 -> container 5432 (evita conflito com um Postgres em 5432 na máquina).
+      - "5433:5432"
+    volumes:
+      # Arquivos em /docker-entrypoint-initdb.d rodam em ordem alfabética na 1ª subida.
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pspd -d hospital"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  patient-data-service:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GRPC_PORT: "50051"
+      METRICS_PORT: "9090"
+      DATABASE_URL: "postgres://pspd:pspd@db:5432/hospital?sslmode=disable"
+      LOG_LEVEL: "info"
+    ports:
+      - "50051:50051"
+      - "9090:9090"
+
+volumes:
+  pgdata:

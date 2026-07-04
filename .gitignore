@@ -1,0 +1,12 @@
+# Binários compilados
+/bin/
+*.exe
+
+# Variáveis de ambiente locais (use .env.example como modelo)
+.env
+
+# Logs
+*.log
+
+# Cobertura de testes
+*.out
