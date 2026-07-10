@@ -56,7 +56,7 @@ func TestSupervisedPatients(t *testing.T) {
 
 func TestCohortPatientsDiabetes(t *testing.T) {
 	r := newRepo(t)
-	ps, err := r.CohortPatients(context.Background(), "Diabetes")
+	ps, err := r.CohortPatients(context.Background(), "DIABETES")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestCohortTotalAndDistributions(t *testing.T) {
 	r := newRepo(t)
 	ctx := context.Background()
 
-	total, err := r.CohortTotal(ctx, "Diabetes")
+	total, err := r.CohortTotal(ctx, "DIABETES")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,12 +77,12 @@ func TestCohortTotalAndDistributions(t *testing.T) {
 		t.Errorf("total da coorte = %d, quer 13", total)
 	}
 
-	bySexCounts, err := r.CohortBySex(ctx, "Diabetes")
+	bySexCounts, err := r.CohortBySex(ctx, "DIABETES")
 	if bySex := sumCounts(t, bySexCounts, err); bySex != 13 {
 		t.Errorf("soma por sexo = %d, quer 13", bySex)
 	}
 
-	byAgeCounts, err := r.CohortByAgeRange(ctx, "Diabetes")
+	byAgeCounts, err := r.CohortByAgeRange(ctx, "DIABETES")
 	if byAge := sumCounts(t, byAgeCounts, err); byAge != 13 {
 		t.Errorf("soma por faixa etária = %d, quer 13", byAge)
 	}
@@ -90,7 +90,7 @@ func TestCohortTotalAndDistributions(t *testing.T) {
 
 func TestCohortHbA1c(t *testing.T) {
 	r := newRepo(t)
-	mean, median, err := r.CohortHbA1c(context.Background(), "Diabetes")
+	mean, median, err := r.CohortHbA1c(context.Background(), "DIABETES")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestCohortHbA1c(t *testing.T) {
 
 func TestMedicationFrequency(t *testing.T) {
 	r := newRepo(t)
-	freq, err := r.CohortMedicationFrequency(context.Background(), "Diabetes")
+	freq, err := r.CohortMedicationFrequency(context.Background(), "DIABETES")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,20 +112,20 @@ func TestMedicationFrequency(t *testing.T) {
 	for _, c := range freq {
 		got[c.Key] = c.Count
 	}
-	if got["Metformina"] != 10 {
-		t.Errorf("Metformina = %d, quer 10", got["Metformina"])
+	if got["METFORMIN"] != 10 {
+		t.Errorf("Metformina = %d, quer 10", got["METFORMIN"])
 	}
-	if got["Insulina"] != 4 {
-		t.Errorf("Insulina = %d, quer 4", got["Insulina"])
+	if got["INSULIN"] != 4 {
+		t.Errorf("Insulina = %d, quer 4", got["INSULIN"])
 	}
-	if got["Losartana"] != 2 {
-		t.Errorf("Losartana = %d, quer 2 (P000013/14 não são da coorte)", got["Losartana"])
+	if got["LOSARTAN"] != 2 {
+		t.Errorf("Losartana = %d, quer 2 (P000013/14 não são da coorte)", got["LOSARTAN"])
 	}
 }
 
 func TestCohortByDepartment(t *testing.T) {
 	r := newRepo(t)
-	counts, err := r.CohortByDepartment(context.Background(), "Diabetes")
+	counts, err := r.CohortByDepartment(context.Background(), "DIABETES")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,11 +133,11 @@ func TestCohortByDepartment(t *testing.T) {
 	for _, c := range counts {
 		got[c.Key] = c.Count
 	}
-	if got["Endocrinologia"] != 13 {
-		t.Errorf("Endocrinologia = %d, quer 13", got["Endocrinologia"])
+	if got["ENDOCRINOLOGY"] != 13 {
+		t.Errorf("Endocrinologia = %d, quer 13", got["ENDOCRINOLOGY"])
 	}
-	if got["Cardiologia"] != 2 {
-		t.Errorf("Cardiologia = %d, quer 2 (P000001 e P000007)", got["Cardiologia"])
+	if got["CARDIOLOGY"] != 2 {
+		t.Errorf("Cardiologia = %d, quer 2 (P000001 e P000007)", got["CARDIOLOGY"])
 	}
 }
 
@@ -149,8 +149,8 @@ func TestCheckAssignment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !allowed || atype != "medico" {
-		t.Errorf("vínculo esperado allowed=true type=medico, veio %v/%q", allowed, atype)
+	if !allowed || atype != "ATTENDING" {
+		t.Errorf("vínculo esperado allowed=true type=ATTENDING, veio %v/%q", allowed, atype)
 	}
 
 	allowed, _, err = r.CheckAssignment(ctx, "med.cardoso", "P000015", "medico")

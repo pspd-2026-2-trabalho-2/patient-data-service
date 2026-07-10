@@ -1,11 +1,9 @@
--- Dados de exemplo para desenvolvimento/teste sem depender do banco do professor.
--- Coorte "Diabetes" projetada para dar agregações verificáveis:
---   13 pacientes diabéticos (P000001..P000012 e P000015)
---   por sexo: 6 male / 7 female
---   por faixa etária (ref. 2026): 18-39 = 3, 40-59 = 6, 60+ = 4
---   HbA1c: média ~7.76, mediana 7.6
---   medicamentos na coorte: Metformina=10, Insulina=4, Losartana=2
--- P000013 e P000014 NÃO são diabéticos (só Hipertensão) -> validam o filtro de coorte.
+-- Dados de exemplo para desenvolvimento/teste local, usando as MESMAS convenções do
+-- banco real (event_type/códigos/departamentos em MAIÚSCULO/inglês, value como texto,
+-- assignment_type ATTENDING/TRAINEE, coluna active booleana, target_condition_code).
+-- Coorte "DIABETES": 13 pacientes; sexo 7F/6M; faixas 18-39=3, 40-59=6, 60+=4;
+-- HbA1c média ~7.76 / mediana 7.6; METFORMIN=10, INSULIN=4, LOSARTAN=2;
+-- ENDOCRINOLOGY=13, CARDIOLOGY=2.
 
 -- ---------- patients ----------
 INSERT INTO patients (patient_id, full_name, birth_date, gender, city, state, cpf, cns) VALUES
@@ -26,117 +24,113 @@ INSERT INTO patients (patient_id, full_name, birth_date, gender, city, state, cp
   ('P000015','Patricia Gomes',     '1975-11-11','female','Brasilia','DF','161.616.161-61','700000000000015');
 
 -- ---------- encounters ----------
--- Um atendimento principal por paciente; diabéticos em Endocrinologia, hipertensos em Cardiologia.
 INSERT INTO encounters (encounter_id, patient_id, start_date, end_date, encounter_type, department) VALUES
-  ('ENC01','P000001','2024-02-10','2024-02-10','Ambulatorial','Endocrinologia'),
-  ('ENC02','P000002','2024-03-05','2024-03-05','Retorno','Endocrinologia'),
-  ('ENC03','P000003','2024-01-20','2024-01-22','Internacao','Endocrinologia'),
-  ('ENC04','P000004','2024-04-11','2024-04-11','Ambulatorial','Endocrinologia'),
-  ('ENC05','P000005','2024-05-30','2024-05-30','Ambulatorial','Endocrinologia'),
-  ('ENC06','P000006','2024-02-28','2024-03-02','Internacao','Endocrinologia'),
-  ('ENC07','P000007','2024-06-12','2024-06-12','Ambulatorial','Endocrinologia'),
-  ('ENC08','P000008','2024-03-18','2024-03-18','Retorno','Endocrinologia'),
-  ('ENC09','P000009','2024-04-25','2024-04-27','Internacao','Endocrinologia'),
-  ('ENC10','P000010','2024-07-08','2024-07-08','Ambulatorial','Endocrinologia'),
-  ('ENC11','P000011','2024-01-14','2024-01-16','Internacao','Endocrinologia'),
-  ('ENC12','P000012','2024-08-05','2024-08-05','Ambulatorial','Endocrinologia'),
-  ('ENC13','P000013','2024-05-19','2024-05-19','Ambulatorial','Cardiologia'),
-  ('ENC14','P000014','2024-03-03','2024-03-03','Retorno','Cardiologia'),
-  ('ENC15','P000015','2024-09-11','2024-09-11','Ambulatorial','Endocrinologia'),
-  ('ENC16','P000001','2024-08-01','2024-08-01','Retorno','Cardiologia'),
-  ('ENC17','P000007','2024-10-02','2024-10-02','Retorno','Cardiologia');
+  ('ENC01','P000001','2024-02-10','2024-02-10','AMBULATORIAL','ENDOCRINOLOGY'),
+  ('ENC02','P000002','2024-03-05','2024-03-05','FOLLOW_UP','ENDOCRINOLOGY'),
+  ('ENC03','P000003','2024-01-20','2024-01-22','INPATIENT','ENDOCRINOLOGY'),
+  ('ENC04','P000004','2024-04-11','2024-04-11','AMBULATORIAL','ENDOCRINOLOGY'),
+  ('ENC05','P000005','2024-05-30','2024-05-30','AMBULATORIAL','ENDOCRINOLOGY'),
+  ('ENC06','P000006','2024-02-28','2024-03-02','INPATIENT','ENDOCRINOLOGY'),
+  ('ENC07','P000007','2024-06-12','2024-06-12','AMBULATORIAL','ENDOCRINOLOGY'),
+  ('ENC08','P000008','2024-03-18','2024-03-18','FOLLOW_UP','ENDOCRINOLOGY'),
+  ('ENC09','P000009','2024-04-25','2024-04-27','INPATIENT','ENDOCRINOLOGY'),
+  ('ENC10','P000010','2024-07-08','2024-07-08','AMBULATORIAL','ENDOCRINOLOGY'),
+  ('ENC11','P000011','2024-01-14','2024-01-16','INPATIENT','ENDOCRINOLOGY'),
+  ('ENC12','P000012','2024-08-05','2024-08-05','AMBULATORIAL','ENDOCRINOLOGY'),
+  ('ENC13','P000013','2024-05-19','2024-05-19','AMBULATORIAL','CARDIOLOGY'),
+  ('ENC14','P000014','2024-03-03','2024-03-03','FOLLOW_UP','CARDIOLOGY'),
+  ('ENC15','P000015','2024-09-11','2024-09-11','AMBULATORIAL','ENDOCRINOLOGY'),
+  ('ENC16','P000001','2024-08-01','2024-08-01','FOLLOW_UP','CARDIOLOGY'),
+  ('ENC17','P000007','2024-10-02','2024-10-02','FOLLOW_UP','CARDIOLOGY');
 
--- ---------- clinical_events: Condições ----------
-INSERT INTO clinical_events (event_id, patient_id, encounter_id, event_type, code, description, event_date, value, unit) VALUES
-  ('EVC01','P000001','ENC01','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-02-10',NULL,NULL),
-  ('EVC02','P000002','ENC02','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-03-05',NULL,NULL),
-  ('EVC03','P000003','ENC03','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-01-20',NULL,NULL),
-  ('EVC04','P000004','ENC04','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-04-11',NULL,NULL),
-  ('EVC05','P000005','ENC05','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-05-30',NULL,NULL),
-  ('EVC06','P000006','ENC06','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-02-28',NULL,NULL),
-  ('EVC07','P000007','ENC07','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-06-12',NULL,NULL),
-  ('EVC08','P000008','ENC08','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-03-18',NULL,NULL),
-  ('EVC09','P000009','ENC09','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-04-25',NULL,NULL),
-  ('EVC10','P000010','ENC10','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-07-08',NULL,NULL),
-  ('EVC11','P000011','ENC11','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-01-14',NULL,NULL),
-  ('EVC12','P000012','ENC12','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-08-05',NULL,NULL),
-  ('EVC13','P000015','ENC15','Condition','Diabetes',   'Diabetes Mellitus Tipo 2','2024-09-11',NULL,NULL),
-  ('EVC14','P000001','ENC16','Condition','Hipertensao','Hipertensão Arterial',    '2024-08-01',NULL,NULL),
-  ('EVC15','P000007','ENC17','Condition','Hipertensao','Hipertensão Arterial',    '2024-10-02',NULL,NULL),
-  ('EVC16','P000013','ENC13','Condition','Hipertensao','Hipertensão Arterial',    '2024-05-19',NULL,NULL),
-  ('EVC17','P000014','ENC14','Condition','Hipertensao','Hipertensão Arterial',    '2024-03-03',NULL,NULL);
+-- ---------- clinical_events: CONDITION ----------
+INSERT INTO clinical_events (event_id, patient_id, encounter_id, event_type, code, description, value, unit, event_date) VALUES
+  ('EVC01','P000001','ENC01','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-02-10'),
+  ('EVC02','P000002','ENC02','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-03-05'),
+  ('EVC03','P000003','ENC03','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-01-20'),
+  ('EVC04','P000004','ENC04','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-04-11'),
+  ('EVC05','P000005','ENC05','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-05-30'),
+  ('EVC06','P000006','ENC06','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-02-28'),
+  ('EVC07','P000007','ENC07','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-06-12'),
+  ('EVC08','P000008','ENC08','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-03-18'),
+  ('EVC09','P000009','ENC09','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-04-25'),
+  ('EVC10','P000010','ENC10','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-07-08'),
+  ('EVC11','P000011','ENC11','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-01-14'),
+  ('EVC12','P000012','ENC12','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-08-05'),
+  ('EVC13','P000015','ENC15','CONDITION','DIABETES',    'Diabetes Mellitus Tipo 2',NULL,NULL,'2024-09-11'),
+  ('EVC14','P000001','ENC16','CONDITION','HYPERTENSION','Hipertensão Arterial',    NULL,NULL,'2024-08-01'),
+  ('EVC15','P000007','ENC17','CONDITION','HYPERTENSION','Hipertensão Arterial',    NULL,NULL,'2024-10-02'),
+  ('EVC16','P000013','ENC13','CONDITION','HYPERTENSION','Hipertensão Arterial',    NULL,NULL,'2024-05-19'),
+  ('EVC17','P000014','ENC14','CONDITION','HYPERTENSION','Hipertensão Arterial',    NULL,NULL,'2024-03-03');
 
--- ---------- clinical_events: Observações (exames) ----------
--- HbA1c dos 13 diabéticos (unidade %); valores escolhidos p/ média ~7.76 e mediana 7.6.
-INSERT INTO clinical_events (event_id, patient_id, encounter_id, event_type, code, description, event_date, value, unit) VALUES
-  ('EVO01','P000001','ENC01','Observation','HbA1c','Hemoglobina glicada','2024-02-10',8.1,'%'),
-  ('EVO02','P000002','ENC02','Observation','HbA1c','Hemoglobina glicada','2024-03-05',7.2,'%'),
-  ('EVO03','P000003','ENC03','Observation','HbA1c','Hemoglobina glicada','2024-01-20',9.0,'%'),
-  ('EVO04','P000004','ENC04','Observation','HbA1c','Hemoglobina glicada','2024-04-11',6.8,'%'),
-  ('EVO05','P000005','ENC05','Observation','HbA1c','Hemoglobina glicada','2024-05-30',7.5,'%'),
-  ('EVO06','P000006','ENC06','Observation','HbA1c','Hemoglobina glicada','2024-02-28',8.8,'%'),
-  ('EVO07','P000007','ENC07','Observation','HbA1c','Hemoglobina glicada','2024-06-12',7.0,'%'),
-  ('EVO08','P000008','ENC08','Observation','HbA1c','Hemoglobina glicada','2024-03-18',6.5,'%'),
-  ('EVO09','P000009','ENC09','Observation','HbA1c','Hemoglobina glicada','2024-04-25',9.4,'%'),
-  ('EVO10','P000010','ENC10','Observation','HbA1c','Hemoglobina glicada','2024-07-08',7.8,'%'),
-  ('EVO11','P000011','ENC11','Observation','HbA1c','Hemoglobina glicada','2024-01-14',8.3,'%'),
-  ('EVO12','P000012','ENC12','Observation','HbA1c','Hemoglobina glicada','2024-08-05',6.9,'%'),
-  ('EVO13','P000015','ENC15','Observation','HbA1c','Hemoglobina glicada','2024-09-11',7.6,'%'),
-  -- Glicemia de jejum para alguns pacientes (unidade mg/dL).
-  ('EVO14','P000001','ENC01','Observation','Glicemia','Glicemia de jejum','2024-02-10',182,'mg/dL'),
-  ('EVO15','P000003','ENC03','Observation','Glicemia','Glicemia de jejum','2024-01-20',210,'mg/dL'),
-  ('EVO16','P000006','ENC06','Observation','Glicemia','Glicemia de jejum','2024-02-28',198,'mg/dL'),
-  ('EVO17','P000009','ENC09','Observation','Glicemia','Glicemia de jejum','2024-04-25',225,'mg/dL'),
-  ('EVO18','P000011','ENC11','Observation','Glicemia','Glicemia de jejum','2024-01-14',190,'mg/dL');
+-- ---------- clinical_events: OBSERVATION ----------
+INSERT INTO clinical_events (event_id, patient_id, encounter_id, event_type, code, description, value, unit, event_date) VALUES
+  ('EVO01','P000001','ENC01','OBSERVATION','HBA1C','Hemoglobina glicada','8.1','%','2024-02-10'),
+  ('EVO02','P000002','ENC02','OBSERVATION','HBA1C','Hemoglobina glicada','7.2','%','2024-03-05'),
+  ('EVO03','P000003','ENC03','OBSERVATION','HBA1C','Hemoglobina glicada','9.0','%','2024-01-20'),
+  ('EVO04','P000004','ENC04','OBSERVATION','HBA1C','Hemoglobina glicada','6.8','%','2024-04-11'),
+  ('EVO05','P000005','ENC05','OBSERVATION','HBA1C','Hemoglobina glicada','7.5','%','2024-05-30'),
+  ('EVO06','P000006','ENC06','OBSERVATION','HBA1C','Hemoglobina glicada','8.8','%','2024-02-28'),
+  ('EVO07','P000007','ENC07','OBSERVATION','HBA1C','Hemoglobina glicada','7.0','%','2024-06-12'),
+  ('EVO08','P000008','ENC08','OBSERVATION','HBA1C','Hemoglobina glicada','6.5','%','2024-03-18'),
+  ('EVO09','P000009','ENC09','OBSERVATION','HBA1C','Hemoglobina glicada','9.4','%','2024-04-25'),
+  ('EVO10','P000010','ENC10','OBSERVATION','HBA1C','Hemoglobina glicada','7.8','%','2024-07-08'),
+  ('EVO11','P000011','ENC11','OBSERVATION','HBA1C','Hemoglobina glicada','8.3','%','2024-01-14'),
+  ('EVO12','P000012','ENC12','OBSERVATION','HBA1C','Hemoglobina glicada','6.9','%','2024-08-05'),
+  ('EVO13','P000015','ENC15','OBSERVATION','HBA1C','Hemoglobina glicada','7.6','%','2024-09-11'),
+  ('EVO14','P000001','ENC01','OBSERVATION','GLUCOSE','Glicemia de jejum','182','mg/dL','2024-02-10'),
+  ('EVO15','P000003','ENC03','OBSERVATION','GLUCOSE','Glicemia de jejum','210','mg/dL','2024-01-20'),
+  ('EVO16','P000006','ENC06','OBSERVATION','GLUCOSE','Glicemia de jejum','198','mg/dL','2024-02-28'),
+  ('EVO17','P000009','ENC09','OBSERVATION','GLUCOSE','Glicemia de jejum','225','mg/dL','2024-04-25'),
+  ('EVO18','P000011','ENC11','OBSERVATION','GLUCOSE','Glicemia de jejum','190','mg/dL','2024-01-14');
 
--- ---------- clinical_events: Medicações ----------
--- Metformina (10 na coorte), Insulina (4 na coorte), Losartana (2 na coorte + 2 fora).
-INSERT INTO clinical_events (event_id, patient_id, encounter_id, event_type, code, description, event_date, value, unit) VALUES
-  ('EVM01','P000001','ENC01','Medication','Metformina','Metformina 850 mg','2024-02-10',850,'mg'),
-  ('EVM02','P000002','ENC02','Medication','Metformina','Metformina 850 mg','2024-03-05',850,'mg'),
-  ('EVM03','P000003','ENC03','Medication','Metformina','Metformina 850 mg','2024-01-20',850,'mg'),
-  ('EVM04','P000004','ENC04','Medication','Metformina','Metformina 850 mg','2024-04-11',850,'mg'),
-  ('EVM05','P000006','ENC06','Medication','Metformina','Metformina 850 mg','2024-02-28',850,'mg'),
-  ('EVM06','P000008','ENC08','Medication','Metformina','Metformina 850 mg','2024-03-18',850,'mg'),
-  ('EVM07','P000009','ENC09','Medication','Metformina','Metformina 850 mg','2024-04-25',850,'mg'),
-  ('EVM08','P000011','ENC11','Medication','Metformina','Metformina 850 mg','2024-01-14',850,'mg'),
-  ('EVM09','P000012','ENC12','Medication','Metformina','Metformina 850 mg','2024-08-05',850,'mg'),
-  ('EVM10','P000015','ENC15','Medication','Metformina','Metformina 850 mg','2024-09-11',850,'mg'),
-  ('EVM11','P000003','ENC03','Medication','Insulina',  'Insulina NPH 10 UI',  '2024-01-20',10,'UI'),
-  ('EVM12','P000006','ENC06','Medication','Insulina',  'Insulina NPH 10 UI',  '2024-02-28',10,'UI'),
-  ('EVM13','P000009','ENC09','Medication','Insulina',  'Insulina NPH 10 UI',  '2024-04-25',10,'UI'),
-  ('EVM14','P000011','ENC11','Medication','Insulina',  'Insulina NPH 10 UI',  '2024-01-14',10,'UI'),
-  ('EVM15','P000001','ENC16','Medication','Losartana', 'Losartana 50 mg',     '2024-08-01',50,'mg'),
-  ('EVM16','P000007','ENC17','Medication','Losartana', 'Losartana 50 mg',     '2024-10-02',50,'mg'),
-  ('EVM17','P000013','ENC13','Medication','Losartana', 'Losartana 50 mg',     '2024-05-19',50,'mg'),
-  ('EVM18','P000014','ENC14','Medication','Losartana', 'Losartana 50 mg',     '2024-03-03',50,'mg');
+-- ---------- clinical_events: MEDICATION ----------
+INSERT INTO clinical_events (event_id, patient_id, encounter_id, event_type, code, description, value, unit, event_date) VALUES
+  ('EVM01','P000001','ENC01','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-02-10'),
+  ('EVM02','P000002','ENC02','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-03-05'),
+  ('EVM03','P000003','ENC03','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-01-20'),
+  ('EVM04','P000004','ENC04','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-04-11'),
+  ('EVM05','P000006','ENC06','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-02-28'),
+  ('EVM06','P000008','ENC08','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-03-18'),
+  ('EVM07','P000009','ENC09','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-04-25'),
+  ('EVM08','P000011','ENC11','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-01-14'),
+  ('EVM09','P000012','ENC12','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-08-05'),
+  ('EVM10','P000015','ENC15','MEDICATION','METFORMIN','Metformina 850 mg','850','mg','2024-09-11'),
+  ('EVM11','P000003','ENC03','MEDICATION','INSULIN',  'Insulina NPH 10 UI',  '10','UI','2024-01-20'),
+  ('EVM12','P000006','ENC06','MEDICATION','INSULIN',  'Insulina NPH 10 UI',  '10','UI','2024-02-28'),
+  ('EVM13','P000009','ENC09','MEDICATION','INSULIN',  'Insulina NPH 10 UI',  '10','UI','2024-04-25'),
+  ('EVM14','P000011','ENC11','MEDICATION','INSULIN',  'Insulina NPH 10 UI',  '10','UI','2024-01-14'),
+  ('EVM15','P000001','ENC16','MEDICATION','LOSARTAN', 'Losartana 50 mg',     '50','mg','2024-08-01'),
+  ('EVM16','P000007','ENC17','MEDICATION','LOSARTAN', 'Losartana 50 mg',     '50','mg','2024-10-02'),
+  ('EVM17','P000013','ENC13','MEDICATION','LOSARTAN', 'Losartana 50 mg',     '50','mg','2024-05-19'),
+  ('EVM18','P000014','ENC14','MEDICATION','LOSARTAN', 'Losartana 50 mg',     '50','mg','2024-03-03');
 
 -- ---------- user_patient_assignments ----------
--- med.cardoso: médico de P000001..P000008.
--- est.souza: estagiário (supervisionado por med.cardoso) de P000001..P000003.
--- med.almeida: médico de P000009..P000015.
-INSERT INTO user_patient_assignments (assignment_id, caregiver_username, patient_id, assignment_type, supervisor_username, status) VALUES
-  ('A01','med.cardoso','P000001','medico',    NULL,          'ativo'),
-  ('A02','med.cardoso','P000002','medico',    NULL,          'ativo'),
-  ('A03','med.cardoso','P000003','medico',    NULL,          'ativo'),
-  ('A04','med.cardoso','P000004','medico',    NULL,          'ativo'),
-  ('A05','med.cardoso','P000005','medico',    NULL,          'ativo'),
-  ('A06','med.cardoso','P000006','medico',    NULL,          'ativo'),
-  ('A07','med.cardoso','P000007','medico',    NULL,          'ativo'),
-  ('A08','med.cardoso','P000008','medico',    NULL,          'ativo'),
-  ('A09','est.souza',  'P000001','estagiario','med.cardoso', 'ativo'),
-  ('A10','est.souza',  'P000002','estagiario','med.cardoso', 'ativo'),
-  ('A11','est.souza',  'P000003','estagiario','med.cardoso', 'ativo'),
-  ('A12','med.almeida','P000009','medico',    NULL,          'ativo'),
-  ('A13','med.almeida','P000010','medico',    NULL,          'ativo'),
-  ('A14','med.almeida','P000011','medico',    NULL,          'ativo'),
-  ('A15','med.almeida','P000012','medico',    NULL,          'ativo'),
-  ('A16','med.almeida','P000013','medico',    NULL,          'ativo'),
-  ('A17','med.almeida','P000014','medico',    NULL,          'ativo'),
-  ('A18','med.almeida','P000015','medico',    NULL,          'ativo');
+-- med.cardoso: ATTENDING de P000001..P000008.
+-- est.souza: TRAINEE (supervisionado por med.cardoso) de P000001..P000003.
+-- med.almeida: ATTENDING de P000009..P000015.
+INSERT INTO user_patient_assignments (assignment_id, username, patient_id, assignment_type, supervisor_username, active) VALUES
+  ('A01','med.cardoso','P000001','ATTENDING',NULL,          TRUE),
+  ('A02','med.cardoso','P000002','ATTENDING',NULL,          TRUE),
+  ('A03','med.cardoso','P000003','ATTENDING',NULL,          TRUE),
+  ('A04','med.cardoso','P000004','ATTENDING',NULL,          TRUE),
+  ('A05','med.cardoso','P000005','ATTENDING',NULL,          TRUE),
+  ('A06','med.cardoso','P000006','ATTENDING',NULL,          TRUE),
+  ('A07','med.cardoso','P000007','ATTENDING',NULL,          TRUE),
+  ('A08','med.cardoso','P000008','ATTENDING',NULL,          TRUE),
+  ('A09','est.souza',  'P000001','TRAINEE',  'med.cardoso', TRUE),
+  ('A10','est.souza',  'P000002','TRAINEE',  'med.cardoso', TRUE),
+  ('A11','est.souza',  'P000003','TRAINEE',  'med.cardoso', TRUE),
+  ('A12','med.almeida','P000009','ATTENDING',NULL,          TRUE),
+  ('A13','med.almeida','P000010','ATTENDING',NULL,          TRUE),
+  ('A14','med.almeida','P000011','ATTENDING',NULL,          TRUE),
+  ('A15','med.almeida','P000012','ATTENDING',NULL,          TRUE),
+  ('A16','med.almeida','P000013','ATTENDING',NULL,          TRUE),
+  ('A17','med.almeida','P000014','ATTENDING',NULL,          TRUE),
+  ('A18','med.almeida','P000015','ATTENDING',NULL,          TRUE);
 
 -- ---------- projects ----------
-INSERT INTO projects (project_id, title, researcher_username, condition_code, status, valid_until) VALUES
-  ('PRJ01','Coorte Diabetes Tipo 2',        'pesq.lima','Diabetes',   'Aprovado','2027-12-31'),
-  ('PRJ02','Coorte Hipertensão Resistente', 'pesq.lima','Hipertensao','Expirado','2024-01-01'),
-  ('PRJ03','Coorte Obesidade',              'pesq.melo','Obesidade',  'Aprovado','2027-06-30');
+INSERT INTO projects (project_id, title, researcher_username, target_condition_code, status, valid_until) VALUES
+  ('PRJ01','Coorte Diabetes Tipo 2',        'pesq.lima','DIABETES',    'APPROVED','2027-12-31'),
+  ('PRJ02','Coorte Hipertensão Resistente', 'pesq.lima','HYPERTENSION','EXPIRED', '2024-01-01'),
+  ('PRJ03','Coorte Obesidade',              'pesq.melo','OBESITY',     'APPROVED','2027-06-30');

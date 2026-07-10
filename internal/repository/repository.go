@@ -4,6 +4,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -32,17 +33,20 @@ const (
 	encounterCols = `encounter_id, patient_id, start_date, end_date,
 		COALESCE(encounter_type,''), COALESCE(department,'')`
 
+	// value é varchar no banco: converte para número só quando for numérico (senão NULL).
 	eventCols = `event_id, patient_id, COALESCE(encounter_id,''), event_type, code,
-		COALESCE(description,''), event_date, value, COALESCE(unit,'')`
+		COALESCE(description,''), event_date,
+		CASE WHEN value ~ '^-?[0-9]+(\.[0-9]+)?$' THEN value::double precision END,
+		COALESCE(unit,'')`
 
-	projectCols = `project_id, title, researcher_username, condition_code, status, valid_until`
+	projectCols = `project_id, title, researcher_username, target_condition_code, status, valid_until`
 )
 
 func (r *Repository) PatientsByDoctor(ctx context.Context, doctor string) ([]domain.Patient, error) {
 	return r.queryPatients(ctx, "PatientsByDoctor",
 		`SELECT `+patientCols+` FROM patients p
 		 JOIN user_patient_assignments a ON a.patient_id = p.patient_id
-		 WHERE a.caregiver_username = $1 AND a.assignment_type = 'medico' AND a.status = 'ativo'
+		 WHERE a.username = $1 AND UPPER(a.assignment_type) = 'ATTENDING' AND a.active
 		 ORDER BY p.patient_id`, doctor)
 }
 
@@ -50,7 +54,7 @@ func (r *Repository) SupervisedPatients(ctx context.Context, intern string) ([]d
 	return r.queryPatients(ctx, "SupervisedPatients",
 		`SELECT `+patientCols+` FROM patients p
 		 JOIN user_patient_assignments a ON a.patient_id = p.patient_id
-		 WHERE a.caregiver_username = $1 AND a.assignment_type = 'estagiario' AND a.status = 'ativo'
+		 WHERE a.username = $1 AND UPPER(a.assignment_type) = 'TRAINEE' AND a.active
 		 ORDER BY p.patient_id`, intern)
 }
 
@@ -58,7 +62,7 @@ func (r *Repository) CohortPatients(ctx context.Context, conditionCode string) (
 	return r.queryPatients(ctx, "CohortPatients",
 		`SELECT DISTINCT `+patientCols+` FROM patients p
 		 JOIN clinical_events e ON e.patient_id = p.patient_id
-		 WHERE e.event_type = 'Condition' AND e.code = $1
+		 WHERE UPPER(e.event_type) = 'CONDITION' AND UPPER(e.code) = UPPER($1)
 		 ORDER BY p.patient_id`, conditionCode)
 }
 
@@ -132,7 +136,7 @@ func (r *Repository) ClinicalEvents(ctx context.Context, patientID, eventType st
 			patientID)
 	}
 	return r.queryEvents(ctx, "ClinicalEvents",
-		`SELECT `+eventCols+` FROM clinical_events WHERE patient_id = $1 AND event_type = $2 ORDER BY event_date DESC`,
+		`SELECT `+eventCols+` FROM clinical_events WHERE patient_id = $1 AND UPPER(event_type) = UPPER($2) ORDER BY event_date DESC`,
 		patientID, eventType)
 }
 
@@ -192,11 +196,11 @@ func (r *Repository) CheckAssignment(ctx context.Context, username, patientID, r
 	defer func() { r.metrics.RecordQuery("CheckAssignment", start, found, err) }()
 
 	sql := `SELECT assignment_type FROM user_patient_assignments
-			WHERE caregiver_username = $1 AND patient_id = $2 AND status = 'ativo'`
+			WHERE username = $1 AND patient_id = $2 AND active`
 	args := []any{username, patientID}
-	if role != "" {
-		sql += ` AND assignment_type = $3`
-		args = append(args, role)
+	if at := mapAssignmentType(role); at != "" {
+		sql += ` AND UPPER(assignment_type) = $3`
+		args = append(args, at)
 	}
 	sql += ` LIMIT 1`
 
@@ -212,9 +216,21 @@ func (r *Repository) CheckAssignment(ctx context.Context, username, patientID, r
 	return true, assignmentType, nil
 }
 
+// mapAssignmentType traduz o papel (role) para o valor da coluna assignment_type do banco.
+func mapAssignmentType(role string) string {
+	switch strings.ToUpper(role) {
+	case "MEDICO", "ATTENDING":
+		return "ATTENDING"
+	case "ESTAGIARIO", "TRAINEE":
+		return "TRAINEE"
+	default:
+		return "" // sem filtro por tipo
+	}
+}
+
 // cohortCTE seleciona os pacientes da coorte (com a condição informada em $1).
 const cohortCTE = `WITH cohort AS (
-	SELECT DISTINCT patient_id FROM clinical_events WHERE event_type = 'Condition' AND code = $1
+	SELECT DISTINCT patient_id FROM clinical_events WHERE UPPER(event_type) = 'CONDITION' AND UPPER(code) = UPPER($1)
 )`
 
 func (r *Repository) CohortTotal(ctx context.Context, conditionCode string) (total int64, err error) {
@@ -223,7 +239,7 @@ func (r *Repository) CohortTotal(ctx context.Context, conditionCode string) (tot
 
 	err = r.pool.QueryRow(ctx,
 		`SELECT COUNT(DISTINCT patient_id) FROM clinical_events
-		 WHERE event_type = 'Condition' AND code = $1`, conditionCode).Scan(&total)
+		 WHERE UPPER(event_type) = 'CONDITION' AND UPPER(code) = UPPER($1)`, conditionCode).Scan(&total)
 	return total, err
 }
 
@@ -256,7 +272,7 @@ func (r *Repository) CohortMedicationFrequency(ctx context.Context, conditionCod
 		cohortCTE+`
 		SELECT e.code, COUNT(*) FROM clinical_events e
 		JOIN cohort c ON c.patient_id = e.patient_id
-		WHERE e.event_type = 'Medication'
+		WHERE UPPER(e.event_type) = 'MEDICATION'
 		GROUP BY e.code ORDER BY COUNT(*) DESC, e.code`, conditionCode)
 }
 
@@ -277,10 +293,11 @@ func (r *Repository) CohortHbA1c(ctx context.Context, conditionCode string) (mea
 
 	err = r.pool.QueryRow(ctx,
 		cohortCTE+`
-		SELECT COALESCE(AVG(e.value), 0),
-		       COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e.value), 0)
+		SELECT COALESCE(AVG(e.value::double precision), 0),
+		       COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e.value::double precision), 0)
 		FROM clinical_events e JOIN cohort c ON c.patient_id = e.patient_id
-		WHERE e.event_type = 'Observation' AND e.code = 'HbA1c'`, conditionCode).Scan(&mean, &median)
+		WHERE UPPER(e.event_type) = 'OBSERVATION' AND UPPER(e.code) = 'HBA1C'
+		  AND e.value ~ '^-?[0-9]+(\.[0-9]+)?$'`, conditionCode).Scan(&mean, &median)
 	return mean, median, err
 }
 

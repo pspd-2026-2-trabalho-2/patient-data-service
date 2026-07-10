@@ -3,11 +3,11 @@ package domain
 
 import "time"
 
-// Tipos de evento clínico (coluna clinical_events.event_type).
+// Tipos de evento clínico (coluna clinical_events.event_type). O banco usa MAIÚSCULO.
 const (
-	EventTypeCondition   = "Condition"
-	EventTypeObservation = "Observation"
-	EventTypeMedication  = "Medication"
+	EventTypeCondition   = "CONDITION"
+	EventTypeObservation = "OBSERVATION"
+	EventTypeMedication  = "MEDICATION"
 )
 
 // Patient espelha a tabela patients.

@@ -75,9 +75,9 @@ Esperado: **2** atendimentos (ENC16 Cardiologia 2024-08-01, ENC01 Endocrinologia
 ```
 
 ### CT-06 — ListClinicalEvents (só exames)
-Esperado: HbA1c 8.1 % e Glicemia 182 mg/dL.
+Esperado: HBA1C 8.1 % e GLUCOSE 182 mg/dL.
 ```json
-{ "patient_id": "P000001", "event_type": "Observation" }
+{ "patient_id": "P000001", "event_type": "OBSERVATION" }
 ```
 
 ### CT-07 — ListClinicalEvents (todos os eventos)
@@ -101,24 +101,24 @@ Esperado: eventos em ordem temporal crescente.
 ### CT-10 — ListCohortPatients
 Esperado: **13** pacientes diabéticos.
 ```json
-{ "condition_code": "Diabetes" }
+{ "condition_code": "DIABETES" }
 ```
 
 ### CT-11 — GetCohortStatistics
 Esperado: total 13; sexo F7/M6; faixas 3/6/4; HbA1c média 7.76 / mediana 7.6;
-medicamentos Metformina 10, Insulina 4, Losartana 2; departamentos Endocrinologia 13, Cardiologia 2.
+medicamentos METFORMIN 10, INSULIN 4, LOSARTAN 2; departamentos ENDOCRINOLOGY 13, CARDIOLOGY 2.
 ```json
-{ "condition_code": "Diabetes" }
+{ "condition_code": "DIABETES" }
 ```
 
 ### CT-12 — ListProjectsByResearcher
-Esperado: **2** projetos (PRJ01 Aprovado, PRJ02 Expirado).
+Esperado: **2** projetos (PRJ01 APPROVED, PRJ02 EXPIRED).
 ```json
 { "researcher_username": "pesq.lima" }
 ```
 
 ### CT-13 — CheckAssignment (vínculo válido)
-Esperado: `allowed: true`, `assignment_type: "medico"`.
+Esperado: `allowed: true`, `assignment_type: "ATTENDING"` (o `role` aceita `medico`/`estagiario` e é mapeado).
 ```json
 { "username": "med.cardoso", "patient_id": "P000001", "role": "medico" }
 ```
@@ -148,10 +148,14 @@ Pare o serviço com `Ctrl+C` e depois `docker compose down -v` (remove o Postgre
 | `med.cardoso` | médico | P000001–P000008 (8) |
 | `est.souza` | estagiário (sup.: med.cardoso) | P000001–P000003 (3) |
 | `med.almeida` | médico | P000009–P000015 (7) |
-| `pesq.lima` | pesquisador | PRJ01 (Diabetes/Aprovado), PRJ02 (Hipertensao/Expirado) |
+| `pesq.lima` | pesquisador | PRJ01 (DIABETES/APPROVED), PRJ02 (HYPERTENSION/EXPIRED) |
 
-**Coorte Diabetes (13):** P000001–P000012 e P000015 · sexo 7F/6M · faixas 18-39=3, 40-59=6, 60+=4 ·
-HbA1c média 7.76 / mediana 7.6 · Metformina 10, Insulina 4, Losartana 2 · Endocrinologia 13, Cardiologia 2.
+**Coorte DIABETES (13):** P000001–P000012 e P000015 · sexo 7F/6M · faixas 18-39=3, 40-59=6, 60+=4 ·
+HbA1c média 7.76 / mediana 7.6 · METFORMIN 10, INSULIN 4, LOSARTAN 2 · ENDOCRINOLOGY 13, CARDIOLOGY 2.
+
+> Estas convenções (MAIÚSCULO/inglês, `assignment_type` ATTENDING/TRAINEE, `active` booleano,
+> `target_condition_code`, `value` como texto) são as mesmas do banco real do professor
+> (`pseudopep_gNN`). Para testar contra ele, veja o `.env` (conexão via túnel SSH).
 
 ## Troubleshooting
 | Sintoma | Solução |
