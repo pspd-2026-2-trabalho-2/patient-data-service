@@ -52,18 +52,27 @@ internal/observability                    métricas Prometheus
 
 ## Como executar
 
-### Opção A — tudo em containers (Postgres + serviço)
+### Opção A — contra o banco do professor (via túnel SSH) — recomendado
+
+A base oficial `pseudopep_g03` fica na rede interna do cluster; a partir da sua máquina, alcança-se
+por um túnel SSH:
 
 ```bash
-docker compose up -d --build
+# janela 1 — túnel (deixe aberta)
+ssh -p 10200 -L 15432:192.168.122.1:5432 <matricula>@kiriland.unb.br
+
+# janela 2 — serviço apontando para o túnel (ver .env)
+cp .env.example .env             # DATABASE_URL = host=localhost port=15432 ... dbname=pseudopep_g03
+go run ./cmd/server
 ```
 
-### Opção B — Postgres em container, serviço via Go (melhor para desenvolver)
+### Opção B — Postgres local (desenvolvimento offline)
 
 ```bash
-docker compose up -d db          # sobe só o Postgres (aplica schema + seed)
-cp .env.example .env             # ajuste se necessário
+docker compose up -d db          # sobe o Postgres local (schema + seed)
+cp .env.example .env             # aponte DATABASE_URL para localhost:5433
 go run ./cmd/server
+# ou tudo em container: docker compose up -d --build
 ```
 
 O serviço sobe em:
@@ -80,8 +89,13 @@ O serviço sobe em:
 | `PG*`          | ver `.env.example`                                            | usadas se `DATABASE_URL` vazia  |
 | `LOG_LEVEL`    | `info`                                                        | `debug`/`info`/`warn`/`error`   |
 
-Quando o banco do professor estiver disponível, basta apontar `DATABASE_URL` para
-ele — nenhum código muda (ajuste `internal/repository` só se o schema divergir).
+O serviço já foi validado contra o banco oficial do professor (`pseudopep_g03`): basta apontar
+`DATABASE_URL` para ele — sem mudar código. Como a senha tem `@`, use o **formato keyword/value**
+do pgx (não a URL `postgres://`):
+
+```
+DATABASE_URL="host=localhost port=15432 user=grupo03_user password=123@g03 dbname=pseudopep_g03 sslmode=disable"
+```
 
 ## RPCs
 
@@ -106,9 +120,11 @@ Guia completo (como subir, casos de teste, payloads e resultados esperados) em
 
 ```bash
 go test ./...                       # unitários (não precisam de banco)
-docker compose up -d db             # sobe o Postgres com seed
-go test -tags=integration ./...     # integração (valida consultas/agregações)
+docker compose up -d db             # sobe o Postgres local com seed
+go test -tags=integration ./...     # integração (valida invariantes do SEED local)
 ```
+> A integração checa as invariantes do **seed local** (coorte de 13). A validação com **dados reais**
+> (coorte de 30.110 no banco do professor) é feita manualmente via Postman/grpcurl — ver **TESTES.md**.
 
 ## Observabilidade
 
