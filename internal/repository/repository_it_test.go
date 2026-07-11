@@ -34,7 +34,11 @@ func newRepo(t *testing.T) *repository.Repository {
 
 func TestPatientsByDoctor(t *testing.T) {
 	r := newRepo(t)
-	ps, err := r.PatientsByDoctor(context.Background(), "med.cardoso")
+	var ps []domain.Patient
+	err := r.PatientsByDoctor(context.Background(), "med.cardoso", func(p domain.Patient) error {
+		ps = append(ps, p)
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +49,11 @@ func TestPatientsByDoctor(t *testing.T) {
 
 func TestSupervisedPatients(t *testing.T) {
 	r := newRepo(t)
-	ps, err := r.SupervisedPatients(context.Background(), "est.souza")
+	var ps []domain.Patient
+	err := r.SupervisedPatients(context.Background(), "est.souza", func(p domain.Patient) error {
+		ps = append(ps, p)
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +64,11 @@ func TestSupervisedPatients(t *testing.T) {
 
 func TestCohortPatientsDiabetes(t *testing.T) {
 	r := newRepo(t)
-	ps, err := r.CohortPatients(context.Background(), "DIABETES")
+	var ps []domain.Patient
+	err := r.CohortPatients(context.Background(), "DIABETES", func(p domain.Patient) error {
+		ps = append(ps, p)
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

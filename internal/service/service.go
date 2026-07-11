@@ -18,12 +18,12 @@ func New(repo *repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) PatientsByDoctor(ctx context.Context, doctor string) ([]domain.Patient, error) {
-	return s.repo.PatientsByDoctor(ctx, doctor)
+func (s *Service) PatientsByDoctor(ctx context.Context, doctor string, yield func(domain.Patient) error) error {
+	return s.repo.PatientsByDoctor(ctx, doctor, yield)
 }
 
-func (s *Service) SupervisedPatients(ctx context.Context, intern string) ([]domain.Patient, error) {
-	return s.repo.SupervisedPatients(ctx, intern)
+func (s *Service) SupervisedPatients(ctx context.Context, intern string, yield func(domain.Patient) error) error {
+	return s.repo.SupervisedPatients(ctx, intern, yield)
 }
 
 func (s *Service) GetPatient(ctx context.Context, patientID string) (*domain.Patient, error) {
@@ -42,8 +42,8 @@ func (s *Service) ClinicalHistory(ctx context.Context, patientID string) ([]doma
 	return s.repo.ClinicalHistory(ctx, patientID)
 }
 
-func (s *Service) CohortPatients(ctx context.Context, conditionCode string) ([]domain.Patient, error) {
-	return s.repo.CohortPatients(ctx, conditionCode)
+func (s *Service) CohortPatients(ctx context.Context, conditionCode string, yield func(domain.Patient) error) error {
+	return s.repo.CohortPatients(ctx, conditionCode, yield)
 }
 
 func (s *Service) ProjectsByResearcher(ctx context.Context, researcher string) ([]domain.Project, error) {

@@ -42,28 +42,28 @@ const (
 	projectCols = `project_id, title, researcher_username, target_condition_code, status, valid_until`
 )
 
-func (r *Repository) PatientsByDoctor(ctx context.Context, doctor string) ([]domain.Patient, error) {
-	return r.queryPatients(ctx, "PatientsByDoctor",
+func (r *Repository) PatientsByDoctor(ctx context.Context, doctor string, yield func(domain.Patient) error) error {
+	return r.streamPatients(ctx, "PatientsByDoctor",
 		`SELECT `+patientCols+` FROM patients p
 		 JOIN user_patient_assignments a ON a.patient_id = p.patient_id
 		 WHERE a.username = $1 AND UPPER(a.assignment_type) = 'ATTENDING' AND a.active
-		 ORDER BY p.patient_id`, doctor)
+		 ORDER BY p.patient_id`, yield, doctor)
 }
 
-func (r *Repository) SupervisedPatients(ctx context.Context, intern string) ([]domain.Patient, error) {
-	return r.queryPatients(ctx, "SupervisedPatients",
+func (r *Repository) SupervisedPatients(ctx context.Context, intern string, yield func(domain.Patient) error) error {
+	return r.streamPatients(ctx, "SupervisedPatients",
 		`SELECT `+patientCols+` FROM patients p
 		 JOIN user_patient_assignments a ON a.patient_id = p.patient_id
 		 WHERE a.username = $1 AND UPPER(a.assignment_type) = 'TRAINEE' AND a.active
-		 ORDER BY p.patient_id`, intern)
+		 ORDER BY p.patient_id`, yield, intern)
 }
 
-func (r *Repository) CohortPatients(ctx context.Context, conditionCode string) ([]domain.Patient, error) {
-	return r.queryPatients(ctx, "CohortPatients",
+func (r *Repository) CohortPatients(ctx context.Context, conditionCode string, yield func(domain.Patient) error) error {
+	return r.streamPatients(ctx, "CohortPatients",
 		`SELECT DISTINCT `+patientCols+` FROM patients p
 		 JOIN clinical_events e ON e.patient_id = p.patient_id
 		 WHERE UPPER(e.event_type) = 'CONDITION' AND UPPER(e.code) = UPPER($1)
-		 ORDER BY p.patient_id`, conditionCode)
+		 ORDER BY p.patient_id`, yield, conditionCode)
 }
 
 func (r *Repository) GetPatient(ctx context.Context, patientID string) (p *domain.Patient, err error) {
@@ -85,25 +85,32 @@ func (r *Repository) GetPatient(ctx context.Context, patientID string) (p *domai
 	return &out, nil
 }
 
-func (r *Repository) queryPatients(ctx context.Context, name, sql string, args ...any) (out []domain.Patient, err error) {
+// streamPatients executa a consulta e chama yield para cada paciente, conforme os
+// registros são lidos do cursor do banco — sem bufferizar o resultado inteiro. É o
+// que permite atender coortes de dezenas de milhares de pacientes por server streaming.
+func (r *Repository) streamPatients(ctx context.Context, name, sql string, yield func(domain.Patient) error, args ...any) (err error) {
 	start := time.Now()
-	defer func() { r.metrics.RecordQuery(name, start, len(out), err) }()
+	sent := 0
+	defer func() { r.metrics.RecordQuery(name, start, sent, err) }()
 
 	rows, err := r.pool.Query(ctx, sql, args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var p domain.Patient
 		if err = rows.Scan(&p.PatientID, &p.FullName, &p.BirthDate, &p.Gender,
 			&p.City, &p.State, &p.CPF, &p.CNS); err != nil {
-			return nil, err
+			return err
 		}
-		out = append(out, p)
+		if err = yield(p); err != nil {
+			return err
+		}
+		sent++
 	}
 	err = rows.Err()
-	return out, err
+	return err
 }
 
 func (r *Repository) Encounters(ctx context.Context, patientID string) (out []domain.Encounter, err error) {

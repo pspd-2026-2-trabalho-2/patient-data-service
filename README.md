@@ -101,17 +101,23 @@ DATABASE_URL="host=localhost port=15432 user=grupo03_user password=123@g03 dbnam
 
 | RPC | Entrada | Saída |
 |-----|---------|-------|
-| `ListPatientsByDoctor` | `doctor_username` | lista de pacientes |
-| `ListSupervisedPatients` | `intern_username` | lista de pacientes |
+| `ListPatientsByDoctor` | `doctor_username` | **stream** de `Patient` (server streaming) |
+| `ListSupervisedPatients` | `intern_username` | **stream** de `Patient` (server streaming) |
 | `GetPatient` | `patient_id` | paciente |
 | `ListEncounters` | `patient_id` | atendimentos |
 | `ListClinicalEvents` | `patient_id`, `event_type?` | eventos clínicos |
 | `GetClinicalSummary` | `patient_id` | resumo clínico |
 | `GetClinicalHistory` | `patient_id` | histórico (ordem temporal) |
-| `ListCohortPatients` | `condition_code` | pacientes da coorte |
+| `ListCohortPatients` | `condition_code` | **stream** de `Patient` (server streaming) |
 | `GetCohortStatistics` | `condition_code` | agregações |
 | `ListProjectsByResearcher` | `researcher_username` | projetos |
 | `CheckAssignment` | `username`, `patient_id`, `role?` | `allowed`, `assignment_type` |
+
+> **Server streaming:** `ListPatientsByDoctor`, `ListSupervisedPatients` e `ListCohortPatients`
+> retornam um **stream** de `Patient` (um por vez, lidos direto do cursor do banco) em vez de uma
+> lista única. Isso evita bufferizar coortes de **dezenas de milhares** de pacientes na memória e no
+> tamanho da mensagem, e permite ao cliente processar os registros conforme chegam. Os demais RPCs
+> são unários. Para testar: `grpcurl -plaintext -d '{"condition_code":"DIABETES"}' localhost:50051 patientdata.v1.PatientDataService/ListCohortPatients` (o grpcurl e o Postman mostram as mensagens chegando em stream).
 
 ## Testes
 

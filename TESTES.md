@@ -74,14 +74,14 @@ Esperado: erro `NOT_FOUND`.
 { "patient_id": "P999999" }
 ```
 
-### CT-03 — ListPatientsByDoctor
-Esperado: os pacientes vinculados ao médico `med.almeida` (~**30.001** pacientes — a base é grande).
+### CT-03 — ListPatientsByDoctor  *(server streaming)*
+Esperado: **stream** com os pacientes vinculados ao médico `med.almeida` (~**30.001** — a base é grande); o grpcurl/Postman mostram os `Patient` chegando um a um.
 ```json
 { "doctor_username": "med.almeida" }
 ```
 
-### CT-04 — ListSupervisedPatients
-Esperado: os pacientes supervisionados pelo estagiário `est.ferreira` (~**7.447** pacientes).
+### CT-04 — ListSupervisedPatients  *(server streaming)*
+Esperado: **stream** com os pacientes supervisionados pelo estagiário `est.ferreira` (~**7.447**).
 ```json
 { "intern_username": "est.ferreira" }
 ```
@@ -116,8 +116,8 @@ Esperado: eventos em ordem temporal crescente.
 { "patient_id": "P030000001" }
 ```
 
-### CT-10 — ListCohortPatients
-Esperado: **30.110** pacientes diabéticos.
+### CT-10 — ListCohortPatients  *(server streaming)*
+Esperado: **stream** com **30.110** pacientes diabéticos, chegando um a um (sem bufferizar).
 ```json
 { "condition_code": "DIABETES" }
 ```

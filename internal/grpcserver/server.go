@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "github.com/pspd-2026-2-trabalho-2/patient-data-service/gen/patientdata/v1"
+	"github.com/pspd-2026-2-trabalho-2/patient-data-service/internal/domain"
 	"github.com/pspd-2026-2-trabalho-2/patient-data-service/internal/repository"
 	"github.com/pspd-2026-2-trabalho-2/patient-data-service/internal/service"
 )
@@ -24,26 +25,28 @@ func New(svc *service.Service) *Server {
 	return &Server{svc: svc}
 }
 
-func (s *Server) ListPatientsByDoctor(ctx context.Context, req *pb.ListPatientsByDoctorRequest) (*pb.PatientList, error) {
+func (s *Server) ListPatientsByDoctor(req *pb.ListPatientsByDoctorRequest, stream pb.PatientDataService_ListPatientsByDoctorServer) error {
 	if req.GetDoctorUsername() == "" {
-		return nil, status.Error(codes.InvalidArgument, "doctor_username é obrigatório")
+		return status.Error(codes.InvalidArgument, "doctor_username é obrigatório")
 	}
-	patients, err := s.svc.PatientsByDoctor(ctx, req.GetDoctorUsername())
-	if err != nil {
-		return nil, toStatus(err)
+	if err := s.svc.PatientsByDoctor(stream.Context(), req.GetDoctorUsername(), func(p domain.Patient) error {
+		return stream.Send(toPBPatient(p))
+	}); err != nil {
+		return toStatus(err)
 	}
-	return &pb.PatientList{Patients: toPBPatients(patients)}, nil
+	return nil
 }
 
-func (s *Server) ListSupervisedPatients(ctx context.Context, req *pb.ListSupervisedPatientsRequest) (*pb.PatientList, error) {
+func (s *Server) ListSupervisedPatients(req *pb.ListSupervisedPatientsRequest, stream pb.PatientDataService_ListSupervisedPatientsServer) error {
 	if req.GetInternUsername() == "" {
-		return nil, status.Error(codes.InvalidArgument, "intern_username é obrigatório")
+		return status.Error(codes.InvalidArgument, "intern_username é obrigatório")
 	}
-	patients, err := s.svc.SupervisedPatients(ctx, req.GetInternUsername())
-	if err != nil {
-		return nil, toStatus(err)
+	if err := s.svc.SupervisedPatients(stream.Context(), req.GetInternUsername(), func(p domain.Patient) error {
+		return stream.Send(toPBPatient(p))
+	}); err != nil {
+		return toStatus(err)
 	}
-	return &pb.PatientList{Patients: toPBPatients(patients)}, nil
+	return nil
 }
 
 func (s *Server) GetPatient(ctx context.Context, req *pb.GetPatientRequest) (*pb.Patient, error) {
@@ -101,15 +104,16 @@ func (s *Server) GetClinicalHistory(ctx context.Context, req *pb.GetClinicalHist
 	return &pb.ClinicalEventList{Events: toPBEvents(events)}, nil
 }
 
-func (s *Server) ListCohortPatients(ctx context.Context, req *pb.ListCohortPatientsRequest) (*pb.PatientList, error) {
+func (s *Server) ListCohortPatients(req *pb.ListCohortPatientsRequest, stream pb.PatientDataService_ListCohortPatientsServer) error {
 	if req.GetConditionCode() == "" {
-		return nil, status.Error(codes.InvalidArgument, "condition_code é obrigatório")
+		return status.Error(codes.InvalidArgument, "condition_code é obrigatório")
 	}
-	patients, err := s.svc.CohortPatients(ctx, req.GetConditionCode())
-	if err != nil {
-		return nil, toStatus(err)
+	if err := s.svc.CohortPatients(stream.Context(), req.GetConditionCode(), func(p domain.Patient) error {
+		return stream.Send(toPBPatient(p))
+	}); err != nil {
+		return toStatus(err)
 	}
-	return &pb.PatientList{Patients: toPBPatients(patients)}, nil
+	return nil
 }
 
 func (s *Server) GetCohortStatistics(ctx context.Context, req *pb.GetCohortStatisticsRequest) (*pb.CohortStatistics, error) {

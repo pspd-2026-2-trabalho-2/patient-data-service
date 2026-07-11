@@ -1478,17 +1478,17 @@ const file_proto_patientdata_v1_patientdata_proto_rawDesc = "" +
 	"\x04role\x18\x03 \x01(\tR\x04role\"\\\n" +
 	"\x17CheckAssignmentResponse\x12\x18\n" +
 	"\aallowed\x18\x01 \x01(\bR\aallowed\x12'\n" +
-	"\x0fassignment_type\x18\x02 \x01(\tR\x0eassignmentType2\xb9\b\n" +
-	"\x12PatientDataService\x12`\n" +
-	"\x14ListPatientsByDoctor\x12+.patientdata.v1.ListPatientsByDoctorRequest\x1a\x1b.patientdata.v1.PatientList\x12d\n" +
-	"\x16ListSupervisedPatients\x12-.patientdata.v1.ListSupervisedPatientsRequest\x1a\x1b.patientdata.v1.PatientList\x12H\n" +
+	"\x0fassignment_type\x18\x02 \x01(\tR\x0eassignmentType2\xb3\b\n" +
+	"\x12PatientDataService\x12^\n" +
+	"\x14ListPatientsByDoctor\x12+.patientdata.v1.ListPatientsByDoctorRequest\x1a\x17.patientdata.v1.Patient0\x01\x12b\n" +
+	"\x16ListSupervisedPatients\x12-.patientdata.v1.ListSupervisedPatientsRequest\x1a\x17.patientdata.v1.Patient0\x01\x12H\n" +
 	"\n" +
 	"GetPatient\x12!.patientdata.v1.GetPatientRequest\x1a\x17.patientdata.v1.Patient\x12V\n" +
 	"\x0eListEncounters\x12%.patientdata.v1.ListEncountersRequest\x1a\x1d.patientdata.v1.EncounterList\x12b\n" +
 	"\x12ListClinicalEvents\x12).patientdata.v1.ListClinicalEventsRequest\x1a!.patientdata.v1.ClinicalEventList\x12`\n" +
 	"\x12GetClinicalSummary\x12).patientdata.v1.GetClinicalSummaryRequest\x1a\x1f.patientdata.v1.ClinicalSummary\x12b\n" +
-	"\x12GetClinicalHistory\x12).patientdata.v1.GetClinicalHistoryRequest\x1a!.patientdata.v1.ClinicalEventList\x12\\\n" +
-	"\x12ListCohortPatients\x12).patientdata.v1.ListCohortPatientsRequest\x1a\x1b.patientdata.v1.PatientList\x12c\n" +
+	"\x12GetClinicalHistory\x12).patientdata.v1.GetClinicalHistoryRequest\x1a!.patientdata.v1.ClinicalEventList\x12Z\n" +
+	"\x12ListCohortPatients\x12).patientdata.v1.ListCohortPatientsRequest\x1a\x17.patientdata.v1.Patient0\x01\x12c\n" +
 	"\x13GetCohortStatistics\x12*.patientdata.v1.GetCohortStatisticsRequest\x1a .patientdata.v1.CohortStatistics\x12h\n" +
 	"\x18ListProjectsByResearcher\x12/.patientdata.v1.ListProjectsByResearcherRequest\x1a\x1b.patientdata.v1.ProjectList\x12b\n" +
 	"\x0fCheckAssignment\x12&.patientdata.v1.CheckAssignmentRequest\x1a'.patientdata.v1.CheckAssignmentResponseBYZWgithub.com/pspd-2026-2-trabalho-2/patient-data-service/gen/patientdata/v1;patientdatav1b\x06proto3"
@@ -1556,14 +1556,14 @@ var file_proto_patientdata_v1_patientdata_proto_depIdxs = []int32{
 	19, // 21: patientdata.v1.PatientDataService.GetCohortStatistics:input_type -> patientdata.v1.GetCohortStatisticsRequest
 	20, // 22: patientdata.v1.PatientDataService.ListProjectsByResearcher:input_type -> patientdata.v1.ListProjectsByResearcherRequest
 	21, // 23: patientdata.v1.PatientDataService.CheckAssignment:input_type -> patientdata.v1.CheckAssignmentRequest
-	7,  // 24: patientdata.v1.PatientDataService.ListPatientsByDoctor:output_type -> patientdata.v1.PatientList
-	7,  // 25: patientdata.v1.PatientDataService.ListSupervisedPatients:output_type -> patientdata.v1.PatientList
+	0,  // 24: patientdata.v1.PatientDataService.ListPatientsByDoctor:output_type -> patientdata.v1.Patient
+	0,  // 25: patientdata.v1.PatientDataService.ListSupervisedPatients:output_type -> patientdata.v1.Patient
 	0,  // 26: patientdata.v1.PatientDataService.GetPatient:output_type -> patientdata.v1.Patient
 	8,  // 27: patientdata.v1.PatientDataService.ListEncounters:output_type -> patientdata.v1.EncounterList
 	9,  // 28: patientdata.v1.PatientDataService.ListClinicalEvents:output_type -> patientdata.v1.ClinicalEventList
 	4,  // 29: patientdata.v1.PatientDataService.GetClinicalSummary:output_type -> patientdata.v1.ClinicalSummary
 	9,  // 30: patientdata.v1.PatientDataService.GetClinicalHistory:output_type -> patientdata.v1.ClinicalEventList
-	7,  // 31: patientdata.v1.PatientDataService.ListCohortPatients:output_type -> patientdata.v1.PatientList
+	0,  // 31: patientdata.v1.PatientDataService.ListCohortPatients:output_type -> patientdata.v1.Patient
 	6,  // 32: patientdata.v1.PatientDataService.GetCohortStatistics:output_type -> patientdata.v1.CohortStatistics
 	10, // 33: patientdata.v1.PatientDataService.ListProjectsByResearcher:output_type -> patientdata.v1.ProjectList
 	22, // 34: patientdata.v1.PatientDataService.CheckAssignment:output_type -> patientdata.v1.CheckAssignmentResponse
