@@ -42,20 +42,20 @@ const (
 	projectCols = `project_id, title, researcher_username, target_condition_code, status, valid_until`
 )
 
-func (r *Repository) PatientsByDoctor(ctx context.Context, doctor string, yield func(domain.Patient) error) error {
+func (r *Repository) PatientsByDoctor(ctx context.Context, doctor string, limit, offset int, yield func(domain.Patient) error) error {
 	return r.streamPatients(ctx, "PatientsByDoctor",
 		`SELECT `+patientCols+` FROM patients p
 		 JOIN user_patient_assignments a ON a.patient_id = p.patient_id
 		 WHERE a.username = $1 AND UPPER(a.assignment_type) = 'ATTENDING' AND a.active
-		 ORDER BY p.patient_id`, yield, doctor)
+		 ORDER BY p.patient_id LIMIT $2 OFFSET $3`, yield, doctor, limit, offset)
 }
 
-func (r *Repository) SupervisedPatients(ctx context.Context, intern string, yield func(domain.Patient) error) error {
+func (r *Repository) SupervisedPatients(ctx context.Context, intern string, limit, offset int, yield func(domain.Patient) error) error {
 	return r.streamPatients(ctx, "SupervisedPatients",
 		`SELECT `+patientCols+` FROM patients p
 		 JOIN user_patient_assignments a ON a.patient_id = p.patient_id
 		 WHERE a.username = $1 AND UPPER(a.assignment_type) = 'TRAINEE' AND a.active
-		 ORDER BY p.patient_id`, yield, intern)
+		 ORDER BY p.patient_id LIMIT $2 OFFSET $3`, yield, intern, limit, offset)
 }
 
 func (r *Repository) CohortPatients(ctx context.Context, conditionCode string, yield func(domain.Patient) error) error {

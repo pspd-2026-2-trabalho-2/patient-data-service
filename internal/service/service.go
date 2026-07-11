@@ -10,6 +10,29 @@ import (
 
 const maxRecentObservations = 5
 
+// Paginação de listas de pacientes: page é 1-based. pageSize é limitado para
+// impedir Bundles FHIR maiores que o limite de mensagem gRPC (4MB) entre o
+// gateway e o data-transform-service.
+const (
+	defaultPageSize = 50
+	maxPageSize     = 200
+)
+
+// limitOffset normaliza page/pageSize e devolve o LIMIT (pageSize+1, para o
+// chamador detectar se há próxima página) e o OFFSET correspondentes.
+func limitOffset(page, pageSize int) (limit, offset int) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = defaultPageSize
+	}
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
+	return pageSize + 1, (page - 1) * pageSize
+}
+
 type Service struct {
 	repo *repository.Repository
 }
@@ -18,12 +41,14 @@ func New(repo *repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) PatientsByDoctor(ctx context.Context, doctor string, yield func(domain.Patient) error) error {
-	return s.repo.PatientsByDoctor(ctx, doctor, yield)
+func (s *Service) PatientsByDoctor(ctx context.Context, doctor string, page, pageSize int, yield func(domain.Patient) error) error {
+	limit, offset := limitOffset(page, pageSize)
+	return s.repo.PatientsByDoctor(ctx, doctor, limit, offset, yield)
 }
 
-func (s *Service) SupervisedPatients(ctx context.Context, intern string, yield func(domain.Patient) error) error {
-	return s.repo.SupervisedPatients(ctx, intern, yield)
+func (s *Service) SupervisedPatients(ctx context.Context, intern string, page, pageSize int, yield func(domain.Patient) error) error {
+	limit, offset := limitOffset(page, pageSize)
+	return s.repo.SupervisedPatients(ctx, intern, limit, offset, yield)
 }
 
 func (s *Service) GetPatient(ctx context.Context, patientID string) (*domain.Patient, error) {

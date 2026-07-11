@@ -35,7 +35,7 @@ func newRepo(t *testing.T) *repository.Repository {
 func TestPatientsByDoctor(t *testing.T) {
 	r := newRepo(t)
 	var ps []domain.Patient
-	err := r.PatientsByDoctor(context.Background(), "med.cardoso", func(p domain.Patient) error {
+	err := r.PatientsByDoctor(context.Background(), "med.cardoso", 100, 0, func(p domain.Patient) error {
 		ps = append(ps, p)
 		return nil
 	})
@@ -50,7 +50,7 @@ func TestPatientsByDoctor(t *testing.T) {
 func TestSupervisedPatients(t *testing.T) {
 	r := newRepo(t)
 	var ps []domain.Patient
-	err := r.SupervisedPatients(context.Background(), "est.souza", func(p domain.Patient) error {
+	err := r.SupervisedPatients(context.Background(), "est.souza", 100, 0, func(p domain.Patient) error {
 		ps = append(ps, p)
 		return nil
 	})
