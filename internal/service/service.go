@@ -3,12 +3,25 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pspd-2026-2-trabalho-2/patient-data-service/internal/domain"
 	"github.com/pspd-2026-2-trabalho-2/patient-data-service/internal/repository"
 )
 
 const maxRecentObservations = 5
+
+// maxSearchLen limita o filtro de busca livre (search) recebido do cliente.
+const maxSearchLen = 100
+
+// normalizeSearch remove espaços nas pontas e trunca (sem erro) em maxSearchLen runes.
+func normalizeSearch(search string) string {
+	search = strings.TrimSpace(search)
+	if runes := []rune(search); len(runes) > maxSearchLen {
+		search = string(runes[:maxSearchLen])
+	}
+	return search
+}
 
 // Paginação de listas de pacientes: page é 1-based. pageSize é limitado para
 // impedir Bundles FHIR maiores que o limite de mensagem gRPC (4MB) entre o
@@ -41,14 +54,14 @@ func New(repo *repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) PatientsByDoctor(ctx context.Context, doctor string, page, pageSize int, yield func(domain.Patient) error) error {
+func (s *Service) PatientsByDoctor(ctx context.Context, doctor string, page, pageSize int, search, gender string, yield func(domain.Patient) error) error {
 	limit, offset := limitOffset(page, pageSize)
-	return s.repo.PatientsByDoctor(ctx, doctor, limit, offset, yield)
+	return s.repo.PatientsByDoctor(ctx, doctor, limit, offset, normalizeSearch(search), gender, yield)
 }
 
-func (s *Service) SupervisedPatients(ctx context.Context, intern string, page, pageSize int, yield func(domain.Patient) error) error {
+func (s *Service) SupervisedPatients(ctx context.Context, intern string, page, pageSize int, search, gender string, yield func(domain.Patient) error) error {
 	limit, offset := limitOffset(page, pageSize)
-	return s.repo.SupervisedPatients(ctx, intern, limit, offset, yield)
+	return s.repo.SupervisedPatients(ctx, intern, limit, offset, normalizeSearch(search), gender, yield)
 }
 
 func (s *Service) GetPatient(ctx context.Context, patientID string) (*domain.Patient, error) {

@@ -16,6 +16,10 @@ import (
 
 var ErrNotFound = errors.New("registro não encontrado")
 
+// likeEscaper escapa os metacaracteres do ILIKE (%, _ e a própria barra) para que um
+// '%' ou '_' digitado pelo usuário na busca seja tratado como texto literal, não wildcard.
+var likeEscaper = strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`)
+
 type Repository struct {
 	pool    *pgxpool.Pool
 	metrics *observability.Metrics
@@ -42,20 +46,24 @@ const (
 	projectCols = `project_id, title, researcher_username, target_condition_code, status, valid_until`
 )
 
-func (r *Repository) PatientsByDoctor(ctx context.Context, doctor string, limit, offset int, yield func(domain.Patient) error) error {
+func (r *Repository) PatientsByDoctor(ctx context.Context, doctor string, limit, offset int, search, gender string, yield func(domain.Patient) error) error {
 	return r.streamPatients(ctx, "PatientsByDoctor",
 		`SELECT `+patientCols+` FROM patients p
 		 JOIN user_patient_assignments a ON a.patient_id = p.patient_id
 		 WHERE a.username = $1 AND UPPER(a.assignment_type) = 'ATTENDING' AND a.active
-		 ORDER BY p.patient_id LIMIT $2 OFFSET $3`, yield, doctor, limit, offset)
+		 AND ($4 = '' OR p.full_name ILIKE '%' || $4 || '%' OR p.cpf ILIKE '%' || $4 || '%')
+		 AND ($5 = '' OR p.gender = $5)
+		 ORDER BY p.patient_id LIMIT $2 OFFSET $3`, yield, doctor, limit, offset, likeEscaper.Replace(search), gender)
 }
 
-func (r *Repository) SupervisedPatients(ctx context.Context, intern string, limit, offset int, yield func(domain.Patient) error) error {
+func (r *Repository) SupervisedPatients(ctx context.Context, intern string, limit, offset int, search, gender string, yield func(domain.Patient) error) error {
 	return r.streamPatients(ctx, "SupervisedPatients",
 		`SELECT `+patientCols+` FROM patients p
 		 JOIN user_patient_assignments a ON a.patient_id = p.patient_id
 		 WHERE a.username = $1 AND UPPER(a.assignment_type) = 'TRAINEE' AND a.active
-		 ORDER BY p.patient_id LIMIT $2 OFFSET $3`, yield, intern, limit, offset)
+		 AND ($4 = '' OR p.full_name ILIKE '%' || $4 || '%' OR p.cpf ILIKE '%' || $4 || '%')
+		 AND ($5 = '' OR p.gender = $5)
+		 ORDER BY p.patient_id LIMIT $2 OFFSET $3`, yield, intern, limit, offset, likeEscaper.Replace(search), gender)
 }
 
 func (r *Repository) CohortPatients(ctx context.Context, conditionCode string, yield func(domain.Patient) error) error {

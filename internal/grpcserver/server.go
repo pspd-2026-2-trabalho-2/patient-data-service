@@ -29,7 +29,7 @@ func (s *Server) ListPatientsByDoctor(req *pb.ListPatientsByDoctorRequest, strea
 	if req.GetDoctorUsername() == "" {
 		return status.Error(codes.InvalidArgument, "doctor_username é obrigatório")
 	}
-	if err := s.svc.PatientsByDoctor(stream.Context(), req.GetDoctorUsername(), int(req.GetPage()), int(req.GetPageSize()), func(p domain.Patient) error {
+	if err := s.svc.PatientsByDoctor(stream.Context(), req.GetDoctorUsername(), int(req.GetPage()), int(req.GetPageSize()), req.GetSearch(), req.GetGender(), func(p domain.Patient) error {
 		return stream.Send(toPBPatient(p))
 	}); err != nil {
 		return toStatus(err)
@@ -41,7 +41,7 @@ func (s *Server) ListSupervisedPatients(req *pb.ListSupervisedPatientsRequest, s
 	if req.GetInternUsername() == "" {
 		return status.Error(codes.InvalidArgument, "intern_username é obrigatório")
 	}
-	if err := s.svc.SupervisedPatients(stream.Context(), req.GetInternUsername(), int(req.GetPage()), int(req.GetPageSize()), func(p domain.Patient) error {
+	if err := s.svc.SupervisedPatients(stream.Context(), req.GetInternUsername(), int(req.GetPage()), int(req.GetPageSize()), req.GetSearch(), req.GetGender(), func(p domain.Patient) error {
 		return stream.Send(toPBPatient(p))
 	}); err != nil {
 		return toStatus(err)

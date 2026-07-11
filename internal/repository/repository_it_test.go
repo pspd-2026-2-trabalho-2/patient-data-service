@@ -35,7 +35,7 @@ func newRepo(t *testing.T) *repository.Repository {
 func TestPatientsByDoctor(t *testing.T) {
 	r := newRepo(t)
 	var ps []domain.Patient
-	err := r.PatientsByDoctor(context.Background(), "med.cardoso", 100, 0, func(p domain.Patient) error {
+	err := r.PatientsByDoctor(context.Background(), "med.cardoso", 100, 0, "", "", func(p domain.Patient) error {
 		ps = append(ps, p)
 		return nil
 	})
@@ -50,7 +50,7 @@ func TestPatientsByDoctor(t *testing.T) {
 func TestSupervisedPatients(t *testing.T) {
 	r := newRepo(t)
 	var ps []domain.Patient
-	err := r.SupervisedPatients(context.Background(), "est.souza", 100, 0, func(p domain.Patient) error {
+	err := r.SupervisedPatients(context.Background(), "est.souza", 100, 0, "", "", func(p domain.Patient) error {
 		ps = append(ps, p)
 		return nil
 	})
@@ -60,6 +60,143 @@ func TestSupervisedPatients(t *testing.T) {
 	if len(ps) != 3 {
 		t.Errorf("est.souza deveria supervisionar 3 pacientes, veio %d", len(ps))
 	}
+}
+
+// TestPatientsByDoctorSearchByName: "Silva" só bate com P000001 (João da Silva).
+func TestPatientsByDoctorSearchByName(t *testing.T) {
+	r := newRepo(t)
+	var ps []domain.Patient
+	err := r.PatientsByDoctor(context.Background(), "med.cardoso", 100, 0, "silva", "", func(p domain.Patient) error {
+		ps = append(ps, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ps) != 1 || ps[0].PatientID != "P000001" {
+		t.Errorf("busca por 'silva' deveria trazer só P000001, veio %+v", ps)
+	}
+}
+
+// TestPatientsByDoctorSearchByCPF: "444.444" só bate com o CPF de P000004.
+func TestPatientsByDoctorSearchByCPF(t *testing.T) {
+	r := newRepo(t)
+	var ps []domain.Patient
+	err := r.PatientsByDoctor(context.Background(), "med.cardoso", 100, 0, "444.444", "", func(p domain.Patient) error {
+		ps = append(ps, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ps) != 1 || ps[0].PatientID != "P000004" {
+		t.Errorf("busca por CPF '444.444' deveria trazer só P000004, veio %+v", ps)
+	}
+}
+
+// TestPatientsByDoctorSearchNoResults: busca sem correspondência devolve bundle vazio, não erro.
+func TestPatientsByDoctorSearchNoResults(t *testing.T) {
+	r := newRepo(t)
+	var ps []domain.Patient
+	err := r.PatientsByDoctor(context.Background(), "med.cardoso", 100, 0, "zzz-nao-existe-zzz", "", func(p domain.Patient) error {
+		ps = append(ps, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ps) != 0 {
+		t.Errorf("busca sem correspondência deveria trazer 0 pacientes, veio %d", len(ps))
+	}
+}
+
+// TestPatientsByDoctorSearchWithPagination: busca por "e" bate com P000003, P000004,
+// P000005, P000006, P000008 (Oliveira, Pereira, Beatriz, Pedro, Rafael/Almeida) — 5 no
+// total entre os pacientes de med.cardoso. Pagina de 3 em 3.
+func TestPatientsByDoctorSearchWithPagination(t *testing.T) {
+	r := newRepo(t)
+
+	var page1 []domain.Patient
+	err := r.PatientsByDoctor(context.Background(), "med.cardoso", 3, 0, "e", "", func(p domain.Patient) error {
+		page1 = append(page1, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantPage1 := []string{"P000003", "P000004", "P000005"}
+	if !samePatientIDs(page1, wantPage1) {
+		t.Errorf("página 1 da busca 'e' = %v, quer %v", ids(page1), wantPage1)
+	}
+
+	var page2 []domain.Patient
+	err = r.PatientsByDoctor(context.Background(), "med.cardoso", 3, 3, "e", "", func(p domain.Patient) error {
+		page2 = append(page2, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantPage2 := []string{"P000006", "P000008"}
+	if !samePatientIDs(page2, wantPage2) {
+		t.Errorf("página 2 da busca 'e' = %v, quer %v", ids(page2), wantPage2)
+	}
+}
+
+// TestPatientsByDoctorGenderFilter: gender=male entre os pacientes de med.cardoso
+// traz P000001, P000004, P000006, P000008.
+func TestPatientsByDoctorGenderFilter(t *testing.T) {
+	r := newRepo(t)
+	var ps []domain.Patient
+	err := r.PatientsByDoctor(context.Background(), "med.cardoso", 100, 0, "", "male", func(p domain.Patient) error {
+		ps = append(ps, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"P000001", "P000004", "P000006", "P000008"}
+	if !samePatientIDs(ps, want) {
+		t.Errorf("filtro gender=male = %v, quer %v", ids(ps), want)
+	}
+}
+
+// TestSupervisedPatientsSearchByName: est.souza supervisiona P000001..P000003;
+// "Souza" só bate com P000002 (Maria Souza).
+func TestSupervisedPatientsSearchByName(t *testing.T) {
+	r := newRepo(t)
+	var ps []domain.Patient
+	err := r.SupervisedPatients(context.Background(), "est.souza", 100, 0, "souza", "", func(p domain.Patient) error {
+		ps = append(ps, p)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ps) != 1 || ps[0].PatientID != "P000002" {
+		t.Errorf("busca por 'souza' deveria trazer só P000002, veio %+v", ps)
+	}
+}
+
+func ids(ps []domain.Patient) []string {
+	out := make([]string, len(ps))
+	for i, p := range ps {
+		out[i] = p.PatientID
+	}
+	return out
+}
+
+func samePatientIDs(ps []domain.Patient, want []string) bool {
+	got := ids(ps)
+	if len(got) != len(want) {
+		return false
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestCohortPatientsDiabetes(t *testing.T) {
