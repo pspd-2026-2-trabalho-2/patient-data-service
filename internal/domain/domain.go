@@ -81,3 +81,9 @@ type CohortStatistics struct {
 	MedicationFrequency []Count
 	ByDepartment        []Count
 }
+
+// PatientExams é um paciente da coorte com seus eventos clínicos já anexados.
+type PatientExams struct {
+	Patient Patient
+	Exams   []ClinicalEvent
+}

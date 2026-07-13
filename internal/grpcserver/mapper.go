@@ -85,6 +85,21 @@ func toPBEvents(in []domain.ClinicalEvent) []*pb.ClinicalEvent {
 	return out
 }
 
+func toPBPatientExams(pe domain.PatientExams) *pb.PatientExams {
+	return &pb.PatientExams{
+		Patient: toPBPatient(pe.Patient),
+		Exams:   toPBEvents(pe.Exams),
+	}
+}
+
+func toPBPatientExamsList(in []domain.PatientExams) []*pb.PatientExams {
+	out := make([]*pb.PatientExams, 0, len(in))
+	for _, pe := range in {
+		out = append(out, toPBPatientExams(pe))
+	}
+	return out
+}
+
 func toPBProject(p domain.Project) *pb.Project {
 	return &pb.Project{
 		ProjectId:          p.ProjectID,

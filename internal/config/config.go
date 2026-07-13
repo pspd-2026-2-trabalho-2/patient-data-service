@@ -4,6 +4,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 )
 
 // Config reúne todos os parâmetros de execução do serviço.
@@ -12,6 +14,9 @@ type Config struct {
 	MetricsPort string
 	DatabaseURL string
 	LogLevel    string
+	DBMaxConns  int32
+	DBMinConns  int32
+	RPCTimeout  time.Duration
 }
 
 // Load lê as variáveis de ambiente; DATABASE_URL tem prioridade sobre as PG*.
@@ -21,6 +26,9 @@ func Load() Config {
 		MetricsPort: getenv("METRICS_PORT", "9090"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		LogLevel:    getenv("LOG_LEVEL", "info"),
+		DBMaxConns:  int32(getenvInt("DB_MAX_CONNS", 10)),
+		DBMinConns:  int32(getenvInt("DB_MIN_CONNS", 1)),
+		RPCTimeout:  getenvDuration("RPC_TIMEOUT", 30*time.Second),
 	}
 	if c.DatabaseURL == "" {
 		c.DatabaseURL = buildDSN()
@@ -43,6 +51,24 @@ func buildDSN() string {
 func getenv(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	return def
+}
+
+func getenvInt(key string, def int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
+}
+
+func getenvDuration(key string, def time.Duration) time.Duration {
+	if v := os.Getenv(key); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			return d
+		}
 	}
 	return def
 }

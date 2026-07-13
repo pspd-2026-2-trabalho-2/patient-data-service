@@ -84,6 +84,43 @@ func (s *Service) CohortPatients(ctx context.Context, conditionCode string, yiel
 	return s.repo.CohortPatients(ctx, conditionCode, yield)
 }
 
+// CohortExams devolve uma página de pacientes da coorte com seus eventos
+// clínicos já anexados, em 2 queries (página de pacientes + eventos em lote)
+// em vez do padrão N+1 (um ListClinicalEvents por paciente).
+func (s *Service) CohortExams(ctx context.Context, conditionCode string, page, pageSize int, eventType string) ([]domain.PatientExams, error) {
+	if eventType == "" {
+		eventType = domain.EventTypeObservation
+	}
+	limit, offset := limitOffset(page, pageSize)
+	patients, err := s.repo.CohortPatientsPage(ctx, conditionCode, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	if len(patients) == 0 {
+		return nil, nil
+	}
+
+	patientIDs := make([]string, len(patients))
+	for i, p := range patients {
+		patientIDs[i] = p.PatientID
+	}
+	events, err := s.repo.EventsForPatients(ctx, patientIDs, eventType)
+	if err != nil {
+		return nil, err
+	}
+
+	eventsByPatient := make(map[string][]domain.ClinicalEvent, len(patients))
+	for _, e := range events {
+		eventsByPatient[e.PatientID] = append(eventsByPatient[e.PatientID], e)
+	}
+
+	out := make([]domain.PatientExams, len(patients))
+	for i, p := range patients {
+		out[i] = domain.PatientExams{Patient: p, Exams: eventsByPatient[p.PatientID]}
+	}
+	return out, nil
+}
+
 func (s *Service) ProjectsByResearcher(ctx context.Context, researcher string) ([]domain.Project, error) {
 	return s.repo.ProjectsByResearcher(ctx, researcher)
 }

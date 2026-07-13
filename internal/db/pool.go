@@ -10,13 +10,20 @@ import (
 )
 
 // NewPool cria e valida um pool de conexões a partir da DSN informada.
-func NewPool(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
+// maxConns/minConns <= 0 usam os defaults (10/1).
+func NewPool(ctx context.Context, dsn string, maxConns, minConns int32) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("dsn inválida: %w", err)
 	}
-	cfg.MaxConns = 10
-	cfg.MinConns = 1
+	if maxConns <= 0 {
+		maxConns = 10
+	}
+	if minConns <= 0 {
+		minConns = 1
+	}
+	cfg.MaxConns = maxConns
+	cfg.MinConns = minConns
 	cfg.MaxConnLifetime = time.Hour
 	cfg.MaxConnIdleTime = 30 * time.Minute
 
