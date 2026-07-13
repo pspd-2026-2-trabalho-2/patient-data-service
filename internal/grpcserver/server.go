@@ -116,6 +116,17 @@ func (s *Server) ListCohortPatients(req *pb.ListCohortPatientsRequest, stream pb
 	return nil
 }
 
+func (s *Server) ListCohortExams(ctx context.Context, req *pb.ListCohortExamsRequest) (*pb.CohortExamsList, error) {
+	if req.GetConditionCode() == "" {
+		return nil, status.Error(codes.InvalidArgument, "condition_code é obrigatório")
+	}
+	patientExams, err := s.svc.CohortExams(ctx, req.GetConditionCode(), int(req.GetPage()), int(req.GetPageSize()), req.GetEventType())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &pb.CohortExamsList{Patients: toPBPatientExamsList(patientExams)}, nil
+}
+
 func (s *Server) GetCohortStatistics(ctx context.Context, req *pb.GetCohortStatisticsRequest) (*pb.CohortStatistics, error) {
 	if req.GetConditionCode() == "" {
 		return nil, status.Error(codes.InvalidArgument, "condition_code é obrigatório")

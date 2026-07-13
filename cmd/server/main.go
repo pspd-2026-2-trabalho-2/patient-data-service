@@ -40,7 +40,7 @@ func main() {
 
 	ctx := context.Background()
 
-	pool, err := db.NewPool(ctx, cfg.DatabaseURL)
+	pool, err := db.NewPool(ctx, cfg.DatabaseURL, cfg.DBMaxConns, cfg.DBMinConns)
 	if err != nil {
 		logger.Error("falha ao conectar no banco", "err", err)
 		os.Exit(1)
@@ -58,6 +58,10 @@ func main() {
 		grpc.ChainUnaryInterceptor(
 			metrics.UnaryServerInterceptor(),
 			loggingInterceptor(logger),
+			timeoutUnaryInterceptor(cfg.RPCTimeout),
+		),
+		grpc.ChainStreamInterceptor(
+			timeoutStreamInterceptor(cfg.RPCTimeout),
 		),
 	)
 	pb.RegisterPatientDataServiceServer(grpcServer, srv)
@@ -130,6 +134,39 @@ func loggingInterceptor(logger *slog.Logger) grpc.UnaryServerInterceptor {
 		return resp, err
 	}
 }
+
+// timeoutUnaryInterceptor impõe um deadline default quando o cliente não manda
+// um — evita que uma chamada sem timeout segure uma conexão do pool indefinidamente.
+func timeoutUnaryInterceptor(d time.Duration) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		if _, ok := ctx.Deadline(); !ok {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, d)
+			defer cancel()
+		}
+		return handler(ctx, req)
+	}
+}
+
+// timeoutStreamInterceptor faz o mesmo para as RPCs de streaming (ListPatientsByDoctor,
+// ListSupervisedPatients, ListCohortPatients), que hoje não têm deadline nenhum.
+func timeoutStreamInterceptor(d time.Duration) grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if _, ok := ss.Context().Deadline(); !ok {
+			ctx, cancel := context.WithTimeout(ss.Context(), d)
+			defer cancel()
+			ss = &deadlineServerStream{ServerStream: ss, ctx: ctx}
+		}
+		return handler(srv, ss)
+	}
+}
+
+type deadlineServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (s *deadlineServerStream) Context() context.Context { return s.ctx }
 
 func newLogger(level string) *slog.Logger {
 	var lvl slog.Level

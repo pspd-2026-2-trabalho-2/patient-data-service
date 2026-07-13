@@ -24,7 +24,7 @@ func newRepo(t *testing.T) *repository.Repository {
 	if dsn == "" {
 		dsn = "postgres://pspd:pspd@localhost:5433/hospital?sslmode=disable"
 	}
-	pool, err := db.NewPool(context.Background(), dsn)
+	pool, err := db.NewPool(context.Background(), dsn, 0, 0)
 	if err != nil {
 		t.Fatalf("conexão com o banco: %v", err)
 	}
@@ -287,6 +287,58 @@ func TestCohortByDepartment(t *testing.T) {
 	}
 	if got["CARDIOLOGY"] != 2 {
 		t.Errorf("Cardiologia = %d, quer 2 (P000001 e P000007)", got["CARDIOLOGY"])
+	}
+}
+
+func TestCohortPatientsPageAndEventsForPatients(t *testing.T) {
+	r := newRepo(t)
+	ctx := context.Background()
+
+	page1, err := r.CohortPatientsPage(ctx, "DIABETES", 7, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page2, err := r.CohortPatientsPage(ctx, "DIABETES", 7, 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page1) != 7 {
+		t.Errorf("página 1 deveria ter 7 pacientes, veio %d", len(page1))
+	}
+	if len(page2) != 6 {
+		t.Errorf("página 2 deveria ter 6 pacientes (coorte de 13), veio %d", len(page2))
+	}
+
+	seen := map[string]bool{}
+	for _, p := range append(append([]domain.Patient{}, page1...), page2...) {
+		if seen[p.PatientID] {
+			t.Errorf("patient_id %s repetido entre as páginas", p.PatientID)
+		}
+		seen[p.PatientID] = true
+	}
+
+	ids := make([]string, len(page1))
+	for i, p := range page1 {
+		ids[i] = p.PatientID
+	}
+	events, err := r.EventsForPatients(ctx, ids, domain.EventTypeObservation)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) == 0 {
+		t.Fatal("esperava eventos OBSERVATION para a página 1")
+	}
+	pageIDs := map[string]bool{}
+	for _, id := range ids {
+		pageIDs[id] = true
+	}
+	for _, e := range events {
+		if !pageIDs[e.PatientID] {
+			t.Errorf("evento de patient_id %s não pertence à página pedida", e.PatientID)
+		}
+		if e.EventType != domain.EventTypeObservation {
+			t.Errorf("event_type = %s, quer %s", e.EventType, domain.EventTypeObservation)
+		}
 	}
 }
 

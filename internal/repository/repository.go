@@ -70,8 +70,36 @@ func (r *Repository) CohortPatients(ctx context.Context, conditionCode string, y
 	return r.streamPatients(ctx, "CohortPatients",
 		`SELECT DISTINCT `+patientCols+` FROM patients p
 		 JOIN clinical_events e ON e.patient_id = p.patient_id
-		 WHERE UPPER(e.event_type) = 'CONDITION' AND UPPER(e.code) = UPPER($1)
+		 WHERE e.event_type = 'CONDITION' AND UPPER(e.code) = UPPER($1)
 		 ORDER BY p.patient_id`, yield, conditionCode)
+}
+
+// CohortPatientsPage devolve uma página (bounded) de pacientes da coorte —
+// usada por CohortExams, que precisa da lista inteira em memória para casar
+// com os eventos clínicos buscados em lote (ver EventsForPatients).
+func (r *Repository) CohortPatientsPage(ctx context.Context, conditionCode string, limit, offset int) (out []domain.Patient, err error) {
+	start := time.Now()
+	defer func() { r.metrics.RecordQuery("CohortPatientsPage", start, len(out), err) }()
+
+	rows, err := r.pool.Query(ctx,
+		`SELECT DISTINCT `+patientCols+` FROM patients p
+		 JOIN clinical_events e ON e.patient_id = p.patient_id
+		 WHERE e.event_type = 'CONDITION' AND UPPER(e.code) = UPPER($1)
+		 ORDER BY p.patient_id LIMIT $2 OFFSET $3`, conditionCode, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var p domain.Patient
+		if err = rows.Scan(&p.PatientID, &p.FullName, &p.BirthDate, &p.Gender,
+			&p.City, &p.State, &p.CPF, &p.CNS); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	err = rows.Err()
+	return out, err
 }
 
 func (r *Repository) GetPatient(ctx context.Context, patientID string) (p *domain.Patient, err error) {
@@ -151,8 +179,17 @@ func (r *Repository) ClinicalEvents(ctx context.Context, patientID, eventType st
 			patientID)
 	}
 	return r.queryEvents(ctx, "ClinicalEvents",
-		`SELECT `+eventCols+` FROM clinical_events WHERE patient_id = $1 AND UPPER(event_type) = UPPER($2) ORDER BY event_date DESC`,
+		`SELECT `+eventCols+` FROM clinical_events WHERE patient_id = $1 AND event_type = UPPER($2) ORDER BY event_date DESC`,
 		patientID, eventType)
+}
+
+// EventsForPatients busca em lote os eventos clínicos de vários pacientes de
+// uma vez (patient_id = ANY($1)), substituindo N chamadas a ClinicalEvents —
+// usada por CohortExams para evitar o padrão N+1 de uma query por paciente.
+func (r *Repository) EventsForPatients(ctx context.Context, patientIDs []string, eventType string) ([]domain.ClinicalEvent, error) {
+	return r.queryEvents(ctx, "EventsForPatients",
+		`SELECT `+eventCols+` FROM clinical_events WHERE patient_id = ANY($1) AND event_type = UPPER($2) ORDER BY patient_id, event_date DESC`,
+		patientIDs, eventType)
 }
 
 // ClinicalHistory ordena em ordem temporal crescente.
@@ -244,8 +281,11 @@ func mapAssignmentType(role string) string {
 }
 
 // cohortCTE seleciona os pacientes da coorte (com a condição informada em $1).
+// event_type não usa UPPER() de propósito: o schema garante maiúsculas via
+// CHECK (event_type IN ('CONDITION','OBSERVATION','MEDICATION')), e comparar
+// direto permite ao planner usar idx_events_type_code(event_type, code).
 const cohortCTE = `WITH cohort AS (
-	SELECT DISTINCT patient_id FROM clinical_events WHERE UPPER(event_type) = 'CONDITION' AND UPPER(code) = UPPER($1)
+	SELECT DISTINCT patient_id FROM clinical_events WHERE event_type = 'CONDITION' AND UPPER(code) = UPPER($1)
 )`
 
 func (r *Repository) CohortTotal(ctx context.Context, conditionCode string) (total int64, err error) {
@@ -254,7 +294,7 @@ func (r *Repository) CohortTotal(ctx context.Context, conditionCode string) (tot
 
 	err = r.pool.QueryRow(ctx,
 		`SELECT COUNT(DISTINCT patient_id) FROM clinical_events
-		 WHERE UPPER(event_type) = 'CONDITION' AND UPPER(code) = UPPER($1)`, conditionCode).Scan(&total)
+		 WHERE event_type = 'CONDITION' AND UPPER(code) = UPPER($1)`, conditionCode).Scan(&total)
 	return total, err
 }
 
@@ -287,7 +327,7 @@ func (r *Repository) CohortMedicationFrequency(ctx context.Context, conditionCod
 		cohortCTE+`
 		SELECT e.code, COUNT(*) FROM clinical_events e
 		JOIN cohort c ON c.patient_id = e.patient_id
-		WHERE UPPER(e.event_type) = 'MEDICATION'
+		WHERE e.event_type = 'MEDICATION'
 		GROUP BY e.code ORDER BY COUNT(*) DESC, e.code`, conditionCode)
 }
 
@@ -311,7 +351,7 @@ func (r *Repository) CohortHbA1c(ctx context.Context, conditionCode string) (mea
 		SELECT COALESCE(AVG(e.value::double precision), 0),
 		       COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e.value::double precision), 0)
 		FROM clinical_events e JOIN cohort c ON c.patient_id = e.patient_id
-		WHERE UPPER(e.event_type) = 'OBSERVATION' AND UPPER(e.code) = 'HBA1C'
+		WHERE e.event_type = 'OBSERVATION' AND UPPER(e.code) = 'HBA1C'
 		  AND e.value ~ '^-?[0-9]+(\.[0-9]+)?$'`, conditionCode).Scan(&mean, &median)
 	return mean, median, err
 }
